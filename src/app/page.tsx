@@ -1,101 +1,207 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState, useEffect } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { questions as aiQuestions } from '@/lib/questions/questions1'
+import { questions as algorithmQuestions } from '@/lib/questions/questions2'
+import { questions as matrixQuestions } from '@/lib/questions/questions3'
+import { ModeToggle as ToggleTheme } from './toggle-theme'
+
+interface Question {
+  text: string
+  options: string[]
+  correctAnswer: number
+}
+
+interface QuizState {
+  currentQuestion: number
+  answers: number[]
+  showResults: boolean
+  selectedQuiz: string | null
+}
+
+const quizTypes = [
+  { id: 'ai', name: 'IA', questions: aiQuestions },
+  { id: 'algorithms', name: 'C et Algorithmes', questions: algorithmQuestions },
+  { id: 'matrices', name: 'Matrices', questions: matrixQuestions },
+]
+
+export default function QuizApp() {
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [quizState, setQuizState] = useState<QuizState>({
+    currentQuestion: 0,
+    answers: [],
+    showResults: false,
+    selectedQuiz: null,
+  })
+
+  useEffect(() => {
+    if (quizState.selectedQuiz) {
+      const selectedQuizQuestions = quizTypes.find(qt => qt.id === quizState.selectedQuiz)?.questions || []
+      setQuestions(selectedQuizQuestions)
+    }
+  }, [quizState.selectedQuiz])
+
+  const handleQuizSelection = (quizId: string) => {
+    setQuizState({
+      currentQuestion: 0,
+      answers: [],
+      showResults: false,
+      selectedQuiz: quizId,
+    })
+  }
+
+  const handleAnswer = (answer: number) => {
+    setQuizState(prev => ({
+      ...prev,
+      answers: [
+        ...prev.answers.slice(0, prev.currentQuestion),
+        answer,
+        ...prev.answers.slice(prev.currentQuestion + 1)
+      ]
+    }))
+  }
+
+  const goToNextQuestion = () => {
+    if (quizState.currentQuestion < questions.length - 1) {
+      setQuizState(prev => ({ ...prev, currentQuestion: prev.currentQuestion + 1 }))
+    } else {
+      setQuizState(prev => ({ ...prev, showResults: true }))
+    }
+  }
+
+  const goToPreviousQuestion = () => {
+    if (quizState.currentQuestion > 0) {
+      setQuizState(prev => ({ ...prev, currentQuestion: prev.currentQuestion - 1 }))
+    }
+  }
+
+  const resetQuiz = () => {
+    setQuizState({
+      currentQuestion: 0,
+      answers: [],
+      showResults: false,
+      selectedQuiz: null,
+    })
+  }
+
+  const switchQuiz = () => {
+    resetQuiz()
+  }
+
+  const calculateScore = () => {
+    return quizState.answers.reduce((score, answer, index) => 
+      answer === questions[index].correctAnswer ? score + 1 : score, 0
+    )
+  }
+
+  if (!quizState.selectedQuiz) {
+    return (
+      <div className="relative">
+        <ToggleTheme />
+        <Card className="w-full max-w-2xl mx-auto mt-8">
+          <CardHeader>
+            <CardTitle>Choisissez un quiz</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {quizTypes.map((quizType) => (
+              <Button
+                key={quizType.id}
+                onClick={() => handleQuizSelection(quizType.id)}
+                className="w-full mb-2"
+              >
+                {quizType.name}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="relative">
+        <ToggleTheme />
+        <div>Chargement...</div>
+      </div>
+    )
+  }
+
+  if (quizState.showResults) {
+    const score = calculateScore()
+    return (
+      <div className="relative">
+        <ToggleTheme />
+        <Card className="w-full max-w-2xl mx-auto mt-8">
+          <CardHeader>
+            <CardTitle>Résultats du Quiz</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold mb-4">Votre score : {score} / {questions.length}</p>
+            {questions.map((question, index) => (
+              <div key={index} className="mb-4">
+                <p className="font-semibold">{question.text}</p>
+                <p className={quizState.answers[index] === question.correctAnswer ? "text-green-600" : "text-red-600"}>
+                  Votre réponse : {question.options[quizState.answers[index]]}
+                </p>
+                {quizState.answers[index] !== question.correctAnswer && (
+                  <p className="text-green-600">Réponse correcte : {question.options[question.correctAnswer]}</p>
+                )}
+              </div>
+            ))}
+            <div className="flex justify-between mt-4">
+              <Button onClick={resetQuiz}>Recommencer le Quiz</Button>
+              <Button onClick={switchQuiz}>Changer de Quiz</Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const currentQuestion = questions[quizState.currentQuestion]
+  const quizTitle = quizTypes.find(qt => qt.id === quizState.selectedQuiz)?.name || ''
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="relative">
+      <ToggleTheme />
+      <Card className="w-full max-w-2xl mx-auto mt-8">
+        <CardHeader>
+          <CardTitle>{quizTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={(quizState.currentQuestion + 1) / questions.length * 100} className="mb-4" />
+          <h2 className="text-xl font-bold mb-4">
+            Question {quizState.currentQuestion + 1} sur {questions.length}
+          </h2>
+          <p className="mb-4">{currentQuestion.text}</p>
+          <RadioGroup
+            onValueChange={(value) => handleAnswer(parseInt(value))}
+            value={quizState.answers[quizState.currentQuestion]?.toString()}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            {currentQuestion.options.map((option, index) => (
+              <div key={index} className="flex items-center space-x-2 mb-2">
+                <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+                <Label htmlFor={`option-${index}`}>{option}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+          <div className="flex justify-between mt-4">
+            <Button onClick={goToPreviousQuestion} disabled={quizState.currentQuestion === 0}>
+              Précédent
+            </Button>
+            <Button onClick={switchQuiz}>Changer de Quiz</Button>
+            <Button onClick={goToNextQuestion}>
+              {quizState.currentQuestion === questions.length - 1 ? "Terminer" : "Suivant"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }
