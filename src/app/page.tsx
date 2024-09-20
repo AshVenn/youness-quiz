@@ -1,5 +1,4 @@
-'use client'
-
+"use client"
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -99,6 +98,11 @@ export default function QuizApp() {
     )
   }
 
+  // Function to end the quiz immediately and show results
+  const finishQuiz = () => {
+    setQuizState(prev => ({ ...prev, showResults: true }))
+  }
+
   if (!quizState.selectedQuiz) {
     return (
       <div className="relative">
@@ -181,8 +185,9 @@ export default function QuizApp() {
           </h2>
           <p className="mb-4">{currentQuestion.text}</p>
           <RadioGroup
+            key={quizState.currentQuestion} // Add key to reset state on question change
             onValueChange={(value) => handleAnswer(parseInt(value))}
-            value={quizState.answers[quizState.currentQuestion]?.toString()}
+            value={quizState.answers[quizState.currentQuestion]?.toString() || ""}
           >
             {currentQuestion.options.map((option, index) => (
               <div key={index} className="flex items-center space-x-2 mb-2">
@@ -198,6 +203,11 @@ export default function QuizApp() {
             <Button onClick={switchQuiz}>Changer de Quiz</Button>
             <Button onClick={goToNextQuestion}>
               {quizState.currentQuestion === questions.length - 1 ? "Terminer" : "Suivant"}
+            </Button>
+          </div>
+          <div className="flex justify-center mt-4">
+            <Button onClick={finishQuiz} className="bg-red-600 text-white">
+              Terminer le Quiz
             </Button>
           </div>
         </CardContent>
