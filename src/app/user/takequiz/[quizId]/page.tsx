@@ -33,7 +33,7 @@ export default function TakeQuiz() {
 
   const router = useRouter();
   const params = useParams();
-  const quizId = params.quizId;
+  const quizId = Array.isArray(params.quizId) ? params.quizId[0] : params.quizId; // Fix for string | string[] issue
 
   useEffect(() => {
     if (quizId) {
