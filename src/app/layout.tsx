@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { ThemeProvider } from "next-themes"
+import ClientProviders from "./ClientProviders"; 
+import { Toaster } from "@/components/ui/toaster"
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -14,9 +15,10 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+// Metadata in French for the SmartQ app
 export const metadata: Metadata = {
-  title: "Youness Quiz",
-  description: "Youness Quiz",
+  title: "SmartQ - Générateur de QCM",
+  description: "Créez et répondez à des QCM personnalisés avec SmartQ. Connectez-vous pour suivre vos résultats et tentatives.",
 };
 
 export default function RootLayout({
@@ -25,18 +27,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
+        {/* Wrap the children with client-side providers */}
+        <ClientProviders>
           {children}
-        </ThemeProvider>
+          <Toaster />
+        </ClientProviders>
       </body>
     </html>
   );
