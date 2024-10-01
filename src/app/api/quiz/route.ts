@@ -1,7 +1,6 @@
-// src/app/api/quiz/route.ts
-
+import mongoose from 'mongoose';
 import { NextResponse, NextRequest } from 'next/server';
-import { Quiz, User } from '@/lib/models/models';
+import { Quiz, User, Subject } from '@/lib/models/models';
 import { dbConnect } from '@/lib/db/db';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getToken } from 'next-auth/jwt';
@@ -14,13 +13,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const prompt: string = body.prompt;
+    const { prompt, difficulty, subject, timerEnabled, timerDuration } = body;
 
-    if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json({ message: 'Le prompt est manquant ou invalide.' }, { status: 400 });
+    if (!prompt || typeof prompt !== 'string' || !difficulty || !subject) {
+      return NextResponse.json({ message: 'Le prompt, la difficulté ou le sujet sont manquants ou invalides.' }, { status: 400 });
     }
 
-    // Retrieve the user's token using NextRequest
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
     if (!token || !token.id) {
@@ -28,21 +26,35 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = token.id;
-
     const user = await User.findById(userId);
 
     if (!user) {
       return NextResponse.json({ message: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Check if the user has remaining attempts
     if (user.remainingAttempts <= 0) {
       return NextResponse.json({ message: 'Vous n\'avez plus de tentatives restantes.' }, { status: 400 });
     }
 
-    // Construct the formatted prompt with instructions
+    // Check if the subject is an existing one or a new one
+    let subjectId;
+    if (mongoose.Types.ObjectId.isValid(subject)) {
+      // If it's a valid ObjectId, treat it as an existing subject
+      const existingSubject = await Subject.findById(subject);
+      if (!existingSubject) {
+        return NextResponse.json({ message: 'Le sujet sélectionné est invalide.' }, { status: 400 });
+      }
+      subjectId = existingSubject._id;
+    } else {
+      // Create a new subject if it's a new string
+      const newSubject = new Subject({ name: subject, createdBy: user._id });
+      await newSubject.save();
+      subjectId = newSubject._id;
+    }
+
     const formattedPrompt = `
       Veuillez générer 5 questions de quiz à choix multiples sur le sujet suivant : "${prompt}".
+      Le niveau de difficulté est : ${difficulty}.
       Chaque question doit être au format JSON suivant:
       {
         "text": "Question?",
@@ -56,19 +68,16 @@ export async function POST(request: NextRequest) {
 
     const result = await model.generateContent(formattedPrompt);
     const response = await result.response;
-
     const generatedText = await response.text();
 
     if (!generatedText) {
       return NextResponse.json({ message: 'Erreur lors de la génération des questions.' }, { status: 500 });
     }
 
-    // Function to clean the generated text
     const cleanGeneratedText = (text: string): string => {
       return text.replace(/(^```json|```$)/gm, '').trim();
     };
 
-    // Parse the generated text into quiz questions
     let generatedQuestions: any[];
     try {
       const cleanedText = cleanGeneratedText(generatedText);
@@ -78,26 +87,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Erreur lors du parsing des questions générées.' }, { status: 500 });
     }
 
-    // Validate that we have 5 questions
     if (!Array.isArray(generatedQuestions) || generatedQuestions.length !== 5) {
       return NextResponse.json({ message: 'Erreur lors de la génération des questions.' }, { status: 500 });
     }
 
-    // Create a new quiz document in the database
     const newQuiz = new Quiz({
       prompt,
       questions: generatedQuestions,
       createdBy: user._id,
+      difficulty,
+      subject: subjectId, // Store the subject reference
+      timerEnabled,
+      timerDuration: timerEnabled ? timerDuration : undefined,
     });
 
-    // Save the quiz in the database
     await newQuiz.save();
 
-    // Reduce the user's remaining attempts by 1
     user.remainingAttempts -= 1;
     await user.save();
 
-    // Return the quiz ID as a response
     return NextResponse.json({ quizId: newQuiz._id }, { status: 200 });
   } catch (error) {
     console.error('Error during request:', error);

@@ -16,6 +16,7 @@ import { useSession, signOut } from 'next-auth/react'
 
 import { useRouter } from 'next/navigation';
 import { ModeToggle } from '../app/toggle-theme';
+import Link from 'next/link'
 
 export function UserNav() {
   const { data: session } = useSession();
@@ -52,10 +53,13 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            Profil
+            <Link href="/user/profile">
+            Profil</Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
+            <Link href="/user/settings">
             Paramètres
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

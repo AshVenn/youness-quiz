@@ -26,6 +26,7 @@ const settingsSchema = z.object({
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
+
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { data: session, update } = useSession()

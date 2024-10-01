@@ -13,7 +13,7 @@ export function MainNav() {
         href="/user/quizzes"
         className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
       >
-        Mes Quiz
+        Sujets/Mes Quiz
       </Link>
       <Link
         href="/user/profile"

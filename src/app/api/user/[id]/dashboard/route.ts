@@ -1,7 +1,5 @@
-// File: src/app/api/user/[id]/dashboard/route.ts
-
 import { NextResponse } from 'next/server';
-import { User, Quiz } from '@/lib/models/models';
+import { User, Quiz, Attempt } from '@/lib/models/models';
 import { dbConnect } from '@/lib/db/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
@@ -42,10 +40,12 @@ export async function GET(
     // Calculate total quizzes
     const totalQuizzes = quizzes.length;
 
-    // Calculate best score (assuming you have scores stored somewhere)
-    // For this example, we'll assume quizzes have a 'bestScore' field
-    const bestScore = quizzes.reduce((max, quiz) => {
-      return quiz.bestScore && quiz.bestScore > max ? quiz.bestScore : max;
+    // Fetch all attempts by the user
+    const attempts = await Attempt.find({ user: user._id }).sort({ createdAt: -1 }).exec();
+
+    // Calculate best score
+    const bestScore = attempts.reduce((max, attempt) => {
+      return attempt.score > max ? attempt.score : max;
     }, 0);
 
     // Get the last quiz creation date
@@ -57,8 +57,27 @@ export async function GET(
       title: quiz.prompt,
       createdAt: quiz.createdAt,
       questionsCount: quiz.questions.length,
-      // Include other relevant data as needed
+      subject: quiz.subject,
+      difficulty: quiz.difficulty,
     }));
+
+    // Get unique subjects
+    const subjects = Array.from(new Set(quizzes.map(quiz => quiz.subject)));
+
+    // Calculate statistics for each difficulty level
+    const difficultyStats = ['easy', 'medium', 'hard'].reduce((acc, difficulty) => {
+      const difficultyAttempts = attempts.filter(attempt => 
+        quizzes.find(quiz => quiz._id.toString() === attempt.quiz.toString())?.difficulty === difficulty
+      );
+      const totalScore = difficultyAttempts.reduce((sum, attempt) => sum + attempt.score, 0);
+      const averageScore = difficultyAttempts.length > 0 ? totalScore / difficultyAttempts.length : 0;
+      
+      acc[difficulty] = {
+        totalAttempts: difficultyAttempts.length,
+        averageScore: Math.round(averageScore * 100) / 100, // Round to 2 decimal places
+      };
+      return acc;
+    }, {} as Record<string, { totalAttempts: number; averageScore: number }>);
 
     // Respond with the dashboard data
     return NextResponse.json(
@@ -67,6 +86,9 @@ export async function GET(
         bestScore,
         lastQuizDate,
         quizHistory,
+        subjects,
+        difficultyStats,
+        remainingAttempts: user.remainingAttempts,
       },
       { status: 200 }
     );

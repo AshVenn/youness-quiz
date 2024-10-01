@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db/db';
-import { Quiz } from '@/lib/models/models';
+import { Quiz, Subject } from '@/lib/models/models';
 
 export async function GET(
   request: Request,
@@ -24,6 +24,10 @@ export async function GET(
       {
         prompt: quiz.prompt,
         questions: quiz.questions,
+        difficulty: quiz.difficulty,
+        subject:quiz.subject,
+        timerEnabled: quiz.timerEnabled,
+        timerDuration: quiz.timerDuration,
       },
       { status: 200 }
     );

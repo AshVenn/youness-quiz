@@ -188,7 +188,7 @@ export default function LandingPage() {
                     <>
                       <li>
                         <NavigationMenuLink asChild>
-                          <Link href="/user" className="block py-2 px-4 hover:bg-accent rounded-md">
+                          <Link href="/user/dashboard" className="block py-2 px-4 hover:bg-accent rounded-md">
                             Mon Profil
                           </Link>
                         </NavigationMenuLink>
