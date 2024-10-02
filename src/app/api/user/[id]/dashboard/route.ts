@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { User, Quiz, Attempt } from '@/lib/models/models';
+import { User, Quiz, Attempt, Subject } from '@/lib/models/models'; // Ensure Subject model is imported
 import { dbConnect } from '@/lib/db/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
@@ -34,8 +34,11 @@ export async function GET(
       return NextResponse.json({ message: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Fetch the quizzes created by the user
-    const quizzes = await Quiz.find({ createdBy: user._id }).sort({ createdAt: -1 }).exec();
+    // Fetch the quizzes created by the user and populate the subject field to get the subject name
+    const quizzes = await Quiz.find({ createdBy: user._id })
+      .populate('subject', 'name') // Populate subject field and only return its name
+      .sort({ createdAt: -1 })
+      .exec();
 
     // Calculate total quizzes
     const totalQuizzes = quizzes.length;
@@ -51,18 +54,18 @@ export async function GET(
     // Get the last quiz creation date
     const lastQuizDate = quizzes.length > 0 ? quizzes[0].createdAt : null;
 
-    // Prepare quiz history data
+    // Prepare quiz history data, using the subject's name
     const quizHistory = quizzes.map((quiz) => ({
       quizId: quiz._id.toString(),
       title: quiz.prompt,
       createdAt: quiz.createdAt,
       questionsCount: quiz.questions.length,
-      subject: quiz.subject,
+      subject: quiz.subject.name, // Use the subject's name here
       difficulty: quiz.difficulty,
     }));
 
     // Get unique subjects
-    const subjects = Array.from(new Set(quizzes.map(quiz => quiz.subject)));
+    const subjects = Array.from(new Set(quizzes.map(quiz => quiz.subject.name)));
 
     // Calculate statistics for each difficulty level
     const difficultyStats = ['easy', 'medium', 'hard'].reduce((acc, difficulty) => {
