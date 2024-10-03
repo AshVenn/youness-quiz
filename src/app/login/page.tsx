@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '@/lib/validation/validation';
-import { signIn } from 'next-auth/react';
+import { signIn,getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -55,8 +55,17 @@ export default function Login() {
         variant: 'destructive',
       });
     } else {
-      router.push('/user/dashboard');
-    }
+      
+        // Fetch the current session to get the user role
+        const session = await getSession();
+        
+        // Redirect based on the user's role
+        if (session?.user?.role === 'admin') {
+          router.push('/admin'); // Admin dashboard
+        } else {
+          router.push('/user/dashboard'); // User dashboard
+        }
+      }
     setIsLoading(false);
   };
 
