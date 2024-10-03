@@ -39,6 +39,7 @@ export async function GET(
       questionsCount: quiz.questions.length,
       subject: quiz.subject,
       difficulty: quiz.difficulty,
+      timerDuration: quiz.timerDuration,
     }));
 
     return NextResponse.json({ quizzes: quizzesData, subjects }, { status: 200 });

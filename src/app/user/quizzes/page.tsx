@@ -4,11 +4,23 @@ import React, { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, BookOpen, Trash2, Edit, Save, BarChart2 } from 'lucide-react'
+import {
+  Loader2,
+  BookOpen,
+  Trash2,
+  Edit,
+  Save,
+  BarChart2,
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +39,7 @@ type Quiz = {
   createdAt: string
   questionsCount: number
   subject: string
+  timerDuration: number // Added timerDuration here
 }
 
 type Subject = {
@@ -54,7 +67,11 @@ const fetchSubjects = async (userId: string) => {
 }
 
 const fetchAttempts = async (userId: string, quizId: string) => {
-  const response = await fetch(`/api/user/${userId}/quizzes/${quizId}/attempts`)
+  if (!quizId) throw new Error('Invalid quiz ID')
+  const response = await fetch(
+    `/api/user/${userId}/quizzes/${quizId}/attempts`
+  )
+  
   if (!response.ok) throw new Error('Failed to fetch attempts')
   return response.json()
 }
@@ -65,6 +82,7 @@ export default function QuizzesPage() {
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null)
   const [selectedQuizName, setSelectedQuizName] = useState<string | null>(null)
+  const [selectedtimerDuration, setSelectedtimerDuration] = useState<number | null>(null) // Added state for timerDuration
 
   const { data: session } = useSession()
   const router = useRouter()
@@ -83,9 +101,10 @@ export default function QuizzesPage() {
     enabled: !!session?.user?.id,
   })
 
-  const { data: attemptsData, refetch: refetchAttempts } = useQuery({
+  const { data: attemptsData } = useQuery({
     queryKey: ['attempts', session?.user?.id, selectedQuizId],
-    queryFn: () => fetchAttempts(session?.user?.id as string, selectedQuizId as string),
+    queryFn: () =>
+      fetchAttempts(session?.user?.id as string, selectedQuizId as string),
     enabled: !!session?.user?.id && !!selectedQuizId,
   })
 
@@ -220,10 +239,14 @@ export default function QuizzesPage() {
     moveQuizMutation.mutate({ quizId, newSubject: destinationSubject })
   }
 
-  const handleAnalytics = (quizId: string, quizName: string) => {
+  const handleAnalytics = (
+    quizId: string,
+    quizName: string,
+    timerDuration: number
+  ) => {
     setSelectedQuizId(quizId)
     setSelectedQuizName(quizName)
-    refetchAttempts()
+    setSelectedtimerDuration(timerDuration) // Set the selected timerDuration
     setAnalyticsOpen(true)
   }
 
@@ -238,11 +261,14 @@ export default function QuizzesPage() {
   const quizzes = quizzesData?.quizzes || []
   const subjects = subjectsData?.subjects || []
 
-  const groupedQuizzes = quizzes.reduce((acc: Record<string, Quiz[]>, quiz: Quiz) => {
-    if (!acc[quiz.subject]) acc[quiz.subject] = []
-    acc[quiz.subject].push(quiz)
-    return acc
-  }, {})
+  const groupedQuizzes = quizzes.reduce(
+    (acc: Record<string, Quiz[]>, quiz: Quiz) => {
+      if (!acc[quiz.subject]) acc[quiz.subject] = []
+      acc[quiz.subject].push(quiz)
+      return acc
+    },
+    {}
+  )
 
   return (
     <motion.div
@@ -254,7 +280,9 @@ export default function QuizzesPage() {
       <h1 className="text-3xl font-bold mb-6">Mes Quiz</h1>
       <DragDropContext onDragEnd={onDragEnd}>
         {subjects.length === 0 ? (
-          <p className="text-center text-gray-500">Vous n'avez pas encore créé de sujets.</p>
+          <p className="text-center text-gray-500">
+            Vous n'avez pas encore créé de sujets.
+          </p>
         ) : (
           subjects.map((subject: Subject) => (
             <Droppable droppableId={subject.id} key={subject.id}>
@@ -272,33 +300,52 @@ export default function QuizzesPage() {
                           onChange={(e) => setNewSubjectName(e.target.value)}
                           className="mr-2"
                         />
-                        <Button onClick={() => handleRenameSubject(subject.name)}>
+                        <Button
+                          onClick={() => handleRenameSubject(subject.name)}
+                        >
                           <Save className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
-                      <h2 className="text-2xl font-semibold">{subject.name}</h2>
+                      <h2 className="text-2xl font-semibold">
+                        {subject.name}
+                      </h2>
                     )}
                     <div className="flex space-x-2">
-                      <Button onClick={() => {
-                        setEditingSubject(subject.id)
-                        setNewSubjectName(subject.name)
-                      }}>
+                      <Button
+                        onClick={() => {
+                          setEditingSubject(subject.id)
+                          setNewSubjectName(subject.name)
+                        }}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="destructive" className="flex items-center">
+                          <Button
+                            variant="destructive"
+                            className="flex items-center"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Confirmer la suppression</DialogTitle>
+                            <DialogTitle>
+                              Confirmer la suppression
+                            </DialogTitle>
                           </DialogHeader>
-                          <p>Êtes-vous sûr de vouloir supprimer le sujet "{subject.name}" ?</p>
+                          <p>
+                            Êtes-vous sûr de vouloir supprimer le sujet "
+                            {subject.name}" ?
+                          </p>
                           <DialogFooter>
-                            <Button variant="destructive" onClick={() => handleDeleteSubject(subject.name)}>
+                            <Button
+                              variant="destructive"
+                              onClick={() =>
+                                handleDeleteSubject(subject.name)
+                              }
+                            >
                               Confirmer
                             </Button>
                           </DialogFooter>
@@ -307,70 +354,104 @@ export default function QuizzesPage() {
                     </div>
                   </div>
 
-                  {groupedQuizzes[subject.id] && groupedQuizzes[subject.id].length > 0 ? (
+                  {groupedQuizzes[subject.id] &&
+                  groupedQuizzes[subject.id].length > 0 ? (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {groupedQuizzes[subject.id].map((quiz: Quiz, index: number) => (
-                        <Draggable key={quiz.id} draggableId={quiz.id} index={index}>
-                          {(provided) => (
-                            <Card
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="hover:shadow-lg transition-shadow"
-                            >
-                              <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                  <span className="truncate">{quiz.prompt}</span>
-                                  <BookOpen className="h-5 w-5 text-gray-400" />
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <p className="text-sm text-gray-500 mb-4">
-                                  Créé le {new Date(quiz.createdAt).toLocaleDateString()}
-                                </p>
-                                <p className="text-sm mb-4">
-                                  {quiz.questionsCount} question{quiz.questionsCount > 1 ? 's' : ''}
-                                </p>
-                                <div className="flex space-x-2">
-                                  <Button
-                                    onClick={() => router.push(`/user/takequiz/${quiz.id}`)}
-                                    className="flex-1"
-                                  >
-                                    Reprendre le Quiz
-                                  </Button>
-                                  <Button onClick={() => handleAnalytics(quiz.id, quiz.prompt)}>
-                                    <BarChart2 className="h-4 w-4" />
-                                  </Button>
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button className="flex items-center">
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Confirmer la suppression</DialogTitle>
-                                      </DialogHeader>
-                                      <p>Êtes-vous sûr de vouloir supprimer ce quiz ?</p>
-                                      <DialogFooter>
-                                        <Button
-                                          variant="destructive"
-                                          onClick={() => handleDeleteQuiz(quiz.id)}
-                                        >
-                                          Confirmer
+                      {groupedQuizzes[subject.id].map(
+                        (quiz: Quiz, index: number) => (
+                          <Draggable
+                            key={quiz.id}
+                            draggableId={quiz.id}
+                            index={index}
+                          >
+                            {(provided) => (
+                              <Card
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="hover:shadow-lg transition-shadow"
+                              >
+                                <CardHeader>
+                                  <CardTitle className="flex items-center justify-between">
+                                    <span className="truncate">
+                                      {quiz.prompt}
+                                    </span>
+                                    <BookOpen className="h-5 w-5 text-gray-400" />
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <p className="text-sm text-gray-500 mb-4">
+                                    Créé le{' '}
+                                    {new Date(
+                                      quiz.createdAt
+                                    ).toLocaleDateString()}
+                                  </p>
+                                  <p className="text-sm mb-4">
+                                    {quiz.questionsCount} question
+                                    {quiz.questionsCount > 1 ? 's' : ''}
+                                  </p>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      onClick={() =>
+                                        router.push(
+                                          `/user/takequiz/${quiz.id}`
+                                        )
+                                      }
+                                      className="flex-1"
+                                    >
+                                      Reprendre le Quiz
+                                    </Button>
+                                    <Button
+                                      onClick={() =>
+                                        handleAnalytics(
+                                          quiz.id,
+                                          quiz.prompt,
+                                          quiz.timerDuration // Pass timerDuration here
+                                        )
+                                      }
+                                    >
+                                      <BarChart2 className="h-4 w-4" />
+                                    </Button>
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button className="flex items-center">
+                                          <Trash2 className="h-4 w-4" />
                                         </Button>
-                                      </DialogFooter>
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-                        </Draggable>
-                      ))}
+                                      </DialogTrigger>
+                                      <DialogContent>
+                                        <DialogHeader>
+                                          <DialogTitle>
+                                            Confirmer la suppression
+                                          </DialogTitle>
+                                        </DialogHeader>
+                                        <p>
+                                          Êtes-vous sûr de vouloir supprimer ce
+                                          quiz ?
+                                        </p>
+                                        <DialogFooter>
+                                          <Button
+                                            variant="destructive"
+                                            onClick={() =>
+                                              handleDeleteQuiz(quiz.id)
+                                            }
+                                          >
+                                            Confirmer
+                                          </Button>
+                                        </DialogFooter>
+                                      </DialogContent>
+                                    </Dialog>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </Draggable>
+                        )
+                      )}
                     </div>
                   ) : (
-                    <p className="text-center text-gray-500">Aucun quiz dans ce sujet.</p>
+                    <p className="text-center text-gray-500">
+                      Aucun quiz dans ce sujet.
+                    </p>
                   )}
                   {provided.placeholder}
                 </div>
@@ -384,6 +465,7 @@ export default function QuizzesPage() {
         onClose={() => setAnalyticsOpen(false)}
         quizName={selectedQuizName || ''}
         attempts={attemptsData?.attempts || []}
+        timerDuration={selectedtimerDuration || 0} // Pass selectedtimerDuration here
       />
     </motion.div>
   )

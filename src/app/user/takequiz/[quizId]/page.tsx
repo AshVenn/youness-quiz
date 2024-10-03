@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,8 @@ export default function TakeQuiz() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [quizFinished, setQuizFinished] = useState<boolean>(false); // New flag
+  const [quizFinished, setQuizFinished] = useState<boolean>(false);
+  const [startTime, setStartTime] = useState<number | null>(null); // Added startTime state
 
   const router = useRouter();
   const params = useParams();
@@ -52,13 +53,15 @@ export default function TakeQuiz() {
   // Timer effect to count down the remaining time
   useEffect(() => {
     if (timeLeft === 0 && !quizFinished) {
-      finishQuiz(); // Only finish the quiz if it hasn't already been finished
+      finishQuiz();
       return;
     }
 
     if (timeLeft !== null && timeLeft > 0) {
       const intervalId = setInterval(() => {
-        setTimeLeft((prevTimeLeft) => (prevTimeLeft && prevTimeLeft > 0 ? prevTimeLeft - 1 : 0));
+        setTimeLeft((prevTimeLeft) =>
+          prevTimeLeft && prevTimeLeft > 0 ? prevTimeLeft - 1 : 0
+        );
       }, 1000);
 
       return () => clearInterval(intervalId); // Cleanup interval
@@ -84,6 +87,9 @@ export default function TakeQuiz() {
       if (data.timerEnabled && data.timerDuration) {
         setTimeLeft(data.timerDuration); // Set the timer duration
       }
+
+      setStartTime(Date.now()); // Set the start time
+
       setLoading(false);
     } catch (error) {
       console.error(error);
@@ -129,6 +135,8 @@ export default function TakeQuiz() {
       answers: new Array(questions.length).fill(null),
       showResults: false,
     });
+    setQuizFinished(false);
+    setStartTime(Date.now()); // Reset start time
     if (timeLeft !== null) {
       setTimeLeft(questions.length * 60); // Reset timer if it was enabled
     }
@@ -136,7 +144,8 @@ export default function TakeQuiz() {
 
   const calculateScore = () => {
     return quizState.answers.reduce(
-      (score, answer, index) => (answer === questions[index].correctAnswer ? score + 1 : score),
+      (score, answer, index) =>
+        answer === questions[index].correctAnswer ? score + 1 : score,
       0
     );
   };
@@ -146,9 +155,14 @@ export default function TakeQuiz() {
     if (quizFinished) return;
 
     setQuizState((prev) => ({ ...prev, showResults: true }));
-    setQuizFinished(true); // Set the flag to prevent multiple submissions
+    setQuizFinished(true);
 
     const score = calculateScore();
+    const endTime = Date.now();
+    const timeTaken = startTime
+      ? Math.floor((endTime - startTime) / 1000)
+      : null; // Calculate time in seconds
+
     try {
       const response = await fetch('/api/attempt', {
         method: 'POST',
@@ -157,7 +171,7 @@ export default function TakeQuiz() {
           quizId,
           answers: quizState.answers,
           score,
-          timeTaken: timeLeft !== null ? questions.length * 60 - timeLeft : null,
+          timeTaken,
         }),
       });
       if (!response.ok) {
@@ -172,7 +186,8 @@ export default function TakeQuiz() {
       console.error(error);
       toast({
         title: 'Erreur',
-        description: "Impossible d'enregistrer votre tentative. Veuillez réessayer.",
+        description:
+          "Impossible d'enregistrer votre tentative. Veuillez réessayer.",
         variant: 'destructive',
       });
     }
@@ -195,7 +210,10 @@ export default function TakeQuiz() {
           </CardHeader>
           <CardContent>
             <p>{error}</p>
-            <Button onClick={() => router.push('/user/dashboard')} className="mt-4">
+            <Button
+              onClick={() => router.push('/user/dashboard')}
+              className="mt-4"
+            >
               Retour au tableau de bord
             </Button>
           </CardContent>
@@ -213,7 +231,10 @@ export default function TakeQuiz() {
           </CardHeader>
           <CardContent>
             <p>Aucune question trouvée pour ce quiz.</p>
-            <Button onClick={() => router.push('/user/dashboard')} className="mt-4">
+            <Button
+              onClick={() => router.push('/user/dashboard')}
+              className="mt-4"
+            >
               Retour au tableau de bord
             </Button>
           </CardContent>
@@ -240,7 +261,10 @@ export default function TakeQuiz() {
             <p className="text-2xl font-bold mb-4">
               Votre score : {score} / {questions.length}
             </p>
-            <Progress value={(score / questions.length) * 100} className="mb-6" />
+            <Progress
+              value={(score / questions.length) * 100}
+              className="mb-6"
+            />
             {questions.map((question, index) => (
               <motion.div
                 key={index}
@@ -263,7 +287,8 @@ export default function TakeQuiz() {
                     ) : (
                       <X className="mr-2" />
                     )}
-                    Votre réponse : {question.options[quizState.answers[index]]}
+                    Votre réponse :{' '}
+                    {question.options[quizState.answers[index]]}
                   </p>
                 </div>
                 {quizState.answers[index] !== question.correctAnswer && (
@@ -275,7 +300,9 @@ export default function TakeQuiz() {
             ))}
             <div className="flex justify-between mt-6">
               <Button onClick={resetQuiz}>Recommencer le Quiz</Button>
-              <Button onClick={() => router.push('/user/dashboard')}>Retour au tableau de bord</Button>
+              <Button onClick={() => router.push('/user/dashboard')}>
+                Retour au tableau de bord
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -297,7 +324,8 @@ export default function TakeQuiz() {
           <CardTitle>{quizTitle}</CardTitle>
           {timeLeft !== null && (
             <CardDescription>
-              Temps restant: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+              Temps restant: {Math.floor(timeLeft / 60)}:
+              {(timeLeft % 60).toString().padStart(2, '0')}
             </CardDescription>
           )}
         </CardHeader>
@@ -320,11 +348,19 @@ export default function TakeQuiz() {
               <p className="mb-4">{currentQuestion.text}</p>
               <RadioGroup
                 onValueChange={(value) => handleAnswer(parseInt(value))}
-                value={quizState.answers[quizState.currentQuestion]?.toString() || ''}
+                value={
+                  quizState.answers[quizState.currentQuestion]?.toString() || ''
+                }
               >
                 {currentQuestion.options.map((option, index) => (
-                  <div key={index} className="flex items-center space-x-2 mb-2">
-                    <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+                  <div
+                    key={index}
+                    className="flex items-center space-x-2 mb-2"
+                  >
+                    <RadioGroupItem
+                      value={index.toString()}
+                      id={`option-${index}`}
+                    />
                     <Label htmlFor={`option-${index}`}>{option}</Label>
                   </div>
                 ))}
@@ -332,11 +368,19 @@ export default function TakeQuiz() {
             </motion.div>
           </AnimatePresence>
           <div className="flex justify-between mt-6">
-            <Button onClick={goToPreviousQuestion} disabled={quizState.currentQuestion === 0}>
+            <Button
+              onClick={goToPreviousQuestion}
+              disabled={quizState.currentQuestion === 0}
+            >
               <ChevronLeft className="mr-2 h-4 w-4" /> Précédent
             </Button>
-            <Button onClick={goToNextQuestion} disabled={quizState.answers[quizState.currentQuestion] === null}>
-              {quizState.currentQuestion === questions.length - 1 ? 'Terminer' : 'Suivant'}
+            <Button
+              onClick={goToNextQuestion}
+              disabled={quizState.answers[quizState.currentQuestion] === null}
+            >
+              {quizState.currentQuestion === questions.length - 1
+                ? 'Terminer'
+                : 'Suivant'}
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
