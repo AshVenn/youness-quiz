@@ -9,7 +9,8 @@ const authPages = ['/login', '/register'];
 
 // Define protected routes and their required roles
 const protectedRoutes: { [key: string]: string[] } = {
-  '/admin': ['admin'], // Only admins can access /admin
+  '/admin': ['admin'], // Only admins can access /admin pages
+  '/api/admin': ['admin'], // Only admins can access /api/admin routes
   // Add more routes and roles as needed
 };
 
@@ -28,8 +29,14 @@ export async function middleware(request: NextRequest) {
   for (const route in protectedRoutes) {
     if (pathname.startsWith(route)) {
       if (!token) {
-        // User is not authenticated, redirect to login
-        return NextResponse.redirect(new URL('/login', request.url));
+        // User is not authenticated
+        if (pathname.startsWith('/api/')) {
+          // Return 401 Unauthorized for API routes
+          return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          // Redirect to login page for client-side routes
+          return NextResponse.redirect(new URL('/login', request.url));
+        }
       }
 
       // Check if the user's role is allowed
@@ -38,7 +45,13 @@ export async function middleware(request: NextRequest) {
 
       if (!allowedRoles.includes(userRole)) {
         // User does not have the required role
-        return NextResponse.redirect(new URL('/not-authorized', request.url));
+        if (pathname.startsWith('/api/')) {
+          // Return 403 Forbidden for API routes
+          return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          // Redirect to not-authorized page for client-side routes
+          return NextResponse.redirect(new URL('/not-authorized', request.url));
+        }
       }
     }
   }
@@ -53,6 +66,7 @@ export const config = {
     '/login',
     '/register',
     '/admin/:path*',
+    '/api/admin/:path*',
     // Add other routes that need middleware
   ],
 };
