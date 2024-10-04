@@ -69,7 +69,7 @@ const requestSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: { type: String, required: true },
   message: { type: String, required: true },
-  status: { type: String, enum: ['En attente', 'Résolu', 'Rejeté'], default: 'En attente' },
+  status: { type: String, enum: ['Pending', 'Resolved', 'Rejected'], default: 'Pending' },
   createdAt: { type: Date, default: Date.now },
 })
 

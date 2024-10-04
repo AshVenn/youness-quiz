@@ -1,5 +1,3 @@
-// RequestsTab.tsx
-
 'use client'
 
 import React, { useState } from 'react'
@@ -19,10 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Search } from 'lucide-react'
+import { Search,CircleCheckBig,CircleX } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
+
 
 type Request = {
   _id: string
@@ -42,7 +41,7 @@ export default function RequestsTab() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Récupération des demandes
+  // Fetching the requests
   const { data: requests, isLoading, error } = useQuery<Request[]>({
     queryKey: ['admin-requests'],
     queryFn: async () => {
@@ -54,7 +53,6 @@ export default function RequestsTab() {
     },
   })
 
-  // Mutation pour mettre à jour le statut d'une demande
   const updateRequestStatusMutation = useMutation({
     mutationFn: async ({
       requestId,
@@ -77,17 +75,19 @@ export default function RequestsTab() {
       queryClient.invalidateQueries({ queryKey: ['admin-requests'] })
       toast({
         title: 'Demande mise à jour',
-        description: 'Le statut de la demande a été mis à jour.',
+        description: 'Le statut de la demande a été mis à jour avec succès.',
       })
     },
     onError: () => {
       toast({
         title: 'Erreur',
-        description: 'Impossible de mettre à jour la demande.',
+        description: 'Impossible de mettre à jour la demande. Veuillez réessayer.',
         variant: 'destructive',
       })
     },
   })
+  
+  
 
   if (isLoading) {
     return <div>Chargement...</div>
@@ -144,21 +144,37 @@ export default function RequestsTab() {
                   </TableCell>
                   <TableCell>{req.status}</TableCell>
                   <TableCell>
-                    {req.status === 'open' ? (
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          updateRequestStatusMutation.mutate({
-                            requestId: req._id,
-                            newStatus: 'closed',
-                          })
-                        }
-                      >
-                        Marquer comme fermé
-                      </Button>
+                    {req.status === 'Pending' ? (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            updateRequestStatusMutation.mutate({
+                              requestId: req._id,
+                              newStatus: 'Resolved',
+                            })
+                          }
+                        >
+                          <CircleCheckBig className="h-4 w-4"/>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() =>
+                            updateRequestStatusMutation.mutate({
+                              requestId: req._id,
+                              newStatus: 'Rejected',
+                            })
+                            
+                          }
+                          className="ml-2"
+                        >
+                          <CircleX className="h-4 w-4"/>
+                        </Button>
+                      </>
                     ) : (
                       <Button size="sm" disabled>
-                        Fermé
+                        {req.status === 'Resolved' ? 'Résolu' : 'Rejeté'}
                       </Button>
                     )}
                   </TableCell>

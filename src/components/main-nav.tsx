@@ -21,6 +21,12 @@ export function MainNav() {
       >
         Profil
       </Link>
+      <Link
+        href="/user/requests"
+        className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+      >
+        Demander quelque chose?
+      </Link>
     </nav>
   )
 }

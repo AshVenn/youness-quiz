@@ -1,4 +1,3 @@
-
 // /api/requests/route.ts
 
 import { NextResponse, NextRequest } from 'next/server'
@@ -11,9 +10,9 @@ export async function POST(request: NextRequest) {
 
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
 
-  // Vérifier si l'utilisateur est authentifié
+  // Check if the user is authenticated
   if (!token || !token.id) {
-    return NextResponse.json({ message: 'Non autorisé' }, { status: 401 })
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })  // English error message
   }
 
   try {
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (!type || !message) {
       return NextResponse.json(
-        { message: 'Le type et le message sont requis' },
+        { message: 'Type and message are required' },  // English error message
         { status: 400 }
       )
     }
@@ -32,16 +31,38 @@ export async function POST(request: NextRequest) {
       user: userId,
       type,
       message,
+      status: 'Pending'  // Status in English
     })
 
     await newRequest.save()
 
     return NextResponse.json(
-      { message: 'Demande créée avec succès' },
+      { message: 'Request successfully created' },  // English success message
       { status: 201 }
     )
   } catch (error) {
-    console.error('Erreur lors de la création de la demande :', error)
-    return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 })
+    console.error('Error while creating the request:', error)
+    return NextResponse.json({ message: 'Server error' }, { status: 500 })  // English error message
+  }
+}
+
+export async function GET(request: NextRequest) {
+  await dbConnect()
+
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+
+  // Check if the user is authenticated
+  if (!token || !token.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })  // English error message
+  }
+
+  try {
+    const userId = token.id
+    const userRequests = await UserRequest.find({ user: userId }).sort({ createdAt: -1 })
+
+    return NextResponse.json(userRequests, { status: 200 })
+  } catch (error) {
+    console.error('Error while retrieving the requests:', error)
+    return NextResponse.json({ message: 'Server error' }, { status: 500 })  // English error message
   }
 }

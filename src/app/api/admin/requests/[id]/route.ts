@@ -13,36 +13,36 @@ export async function PUT(
 
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
 
-  // Vérifier si l'utilisateur est authentifié et est un administrateur
+  // Check if the user is authenticated and is an administrator
   if (!token || token.role !== 'admin') {
-    return NextResponse.json({ message: 'Non autorisé' }, { status: 401 })
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
   try {
     const { id } = params
     const { status } = await request.json()
 
-    if (!status || !['open', 'closed'].includes(status)) {
+    if (!status || !['Open', 'Closed', 'Resolved', 'Rejected'].includes(status)) {
       return NextResponse.json(
-        { message: 'Le statut est requis et doit être "open" ou "closed"' },
+        { message: 'Status is required and must be "open", "closed", "resolved", or "rejected"' },
         { status: 400 }
       )
     }
 
     const userRequest = await UserRequest.findById(id)
     if (!userRequest) {
-      return NextResponse.json({ message: 'Demande non trouvée' }, { status: 404 })
+      return NextResponse.json({ message: 'Request not found' }, { status: 404 })
     }
 
     userRequest.status = status
     await userRequest.save()
 
     return NextResponse.json(
-      { message: 'Demande mise à jour avec succès' },
+      { message: 'Request successfully updated' },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Erreur lors de la mise à jour de la demande :', error)
-    return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 })
+    console.error('Error updating request:', error)
+    return NextResponse.json({ message: 'Server error' }, { status: 500 })
   }
 }

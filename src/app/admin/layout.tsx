@@ -2,10 +2,7 @@
 
 import React, { useState } from 'react'
 import { 
-  Users, 
-  BookOpen, 
-  PlusCircle, 
-  BarChart2, 
+  LayoutDashboard,
   Settings, 
   LogOut,
   Menu,
@@ -25,28 +22,11 @@ export default function AdminLayout({
 
   const NavItems = () => (
     <>
-      <Link href="/admin/users" passHref>
-        <Button variant={pathname === '/admin/users' ? 'secondary' : 'ghost'} className="w-full justify-start">
-          <Users className="mr-2 h-4 w-4" />
-          Utilisateurs
-        </Button>
-      </Link>
-      <Link href="/admin/categories" passHref>
-        <Button variant={pathname === '/admin/categories' ? 'secondary' : 'ghost'} className="w-full justify-start">
-          <BookOpen className="mr-2 h-4 w-4" />
-          Catégories
-        </Button>
-      </Link>
-      <Link href="/admin/quizzes" passHref>
-        <Button variant={pathname === '/admin/quizzes' ? 'secondary' : 'ghost'} className="w-full justify-start">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Quiz
-        </Button>
-      </Link>
-      <Link href="/admin/stats" passHref>
-        <Button variant={pathname === '/admin/stats' ? 'secondary' : 'ghost'} className="w-full justify-start">
-          <BarChart2 className="mr-2 h-4 w-4" />
-          Statistiques
+      
+      <Link href="/admin" passHref>
+        <Button variant={pathname === '/admin' ? 'secondary' : 'ghost'} className="w-full justify-start">
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          Tableau de bord
         </Button>
       </Link>
       <Link href="/admin/settings" passHref>
