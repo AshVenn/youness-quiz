@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server'
 import { dbConnect } from '@/lib/db/db'
-import { Quiz, Subject } from '@/lib/models/models'
+import { Quiz, Subject,Attempt } from '@/lib/models/models'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 
@@ -130,6 +130,7 @@ export async function DELETE(
         { status: 404 }
       );
     }
+    await Attempt.deleteMany({ quiz: quizId });
 
     return NextResponse.json({ message: 'Quiz supprimé avec succès.' }, { status: 200 });
   } catch (error) {

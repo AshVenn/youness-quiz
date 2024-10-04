@@ -1,5 +1,3 @@
-// TakeQuiz.tsx
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -51,7 +49,6 @@ export default function TakeQuiz() {
   const { data: session } = useSession();
   const quizId = Array.isArray(params.quizId) ? params.quizId[0] : params.quizId;
 
-  // Récupérer les données du quiz au chargement du composant
   useEffect(() => {
     if (quizId) {
       setLoading(true);
@@ -59,7 +56,6 @@ export default function TakeQuiz() {
     }
   }, [quizId]);
 
-  // Effet pour gérer le timer du quiz
   useEffect(() => {
     if (timeLeft === 0 && !quizFinished) {
       finishQuiz();
@@ -73,7 +69,7 @@ export default function TakeQuiz() {
         );
       }, 1000);
 
-      return () => clearInterval(intervalId); // Nettoyage de l'intervalle
+      return () => clearInterval(intervalId);
     }
   }, [timeLeft, quizFinished]);
 
@@ -87,22 +83,20 @@ export default function TakeQuiz() {
 
       setQuestions(data.questions);
       setQuizTitle(data.prompt);
-      setQuizCreatorId(data.createdBy); // Récupérer l'ID du créateur du quiz
+      setQuizCreatorId(data.createdBy);
       setQuizState((prev) => ({
         ...prev,
         answers: new Array(data.questions.length).fill(null),
       }));
 
-      // Définir le timer si activé
       if (data.timerEnabled && data.timerDuration) {
-        setTimeLeft(data.timerDuration); // Durée du timer
+        setTimeLeft(data.timerDuration);
       }
 
-      setStartTime(Date.now()); // Heure de début du quiz
+      setStartTime(Date.now());
 
       setLoading(false);
 
-      // Vérifier si l'utilisateur a déjà évalué le quiz
       if (session?.user?.id) {
         const ratingResponse = await fetch(`/api/quiz/${id}/rating`, {
           method: 'GET',
@@ -116,7 +110,6 @@ export default function TakeQuiz() {
         }
       }
     } catch (error) {
-      console.error(error);
       setError('Erreur lors du chargement du quiz.');
       setLoading(false);
     }
@@ -160,9 +153,9 @@ export default function TakeQuiz() {
       showResults: false,
     });
     setQuizFinished(false);
-    setStartTime(Date.now()); // Réinitialiser l'heure de début
+    setStartTime(Date.now());
     if (timeLeft !== null) {
-      setTimeLeft(questions.length * 60); // Réinitialiser le timer si activé
+      setTimeLeft(questions.length * 60);
     }
   };
 
@@ -175,7 +168,6 @@ export default function TakeQuiz() {
   };
 
   const finishQuiz = async () => {
-    // Éviter les appels multiples
     if (quizFinished) return;
 
     setQuizState((prev) => ({ ...prev, showResults: true }));
@@ -185,7 +177,7 @@ export default function TakeQuiz() {
     const endTime = Date.now();
     const timeTaken = startTime
       ? Math.floor((endTime - startTime) / 1000)
-      : null; // Temps pris en secondes
+      : null;
 
     try {
       const response = await fetch('/api/attempt', {
@@ -207,7 +199,6 @@ export default function TakeQuiz() {
         description: 'Votre tentative a été enregistrée avec succès.',
       });
     } catch (error) {
-      console.error(error);
       toast({
         title: 'Erreur',
         description:
@@ -219,28 +210,32 @@ export default function TakeQuiz() {
 
   const submitRating = async (rating: number) => {
     if (!session || !session.user || hasRated) return;
-
+  
     try {
       const response = await fetch(`/api/quiz/${quizId}/rating`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rating }),
       });
-
+  
+      const responseData = await response.json();
+  
       if (!response.ok) {
-        throw new Error('Failed to submit rating');
+        if (responseData.hasRated) {
+          setHasRated(true);
+        }
+        throw new Error(responseData.message || 'Failed to submit rating');
       }
-
+  
       setHasRated(true);
       toast({
         title: 'Merci pour votre évaluation !',
         variant: 'success',
       });
     } catch (error) {
-      console.error(error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de soumettre votre évaluation.',
+        description: error instanceof Error ? error.message : 'Impossible de soumettre votre évaluation.',
         variant: 'destructive',
       });
     }
@@ -256,8 +251,8 @@ export default function TakeQuiz() {
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Card>
+      <div className="flex justify-center items-center h-screen p-4">
+        <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Erreur</CardTitle>
           </CardHeader>
@@ -265,7 +260,7 @@ export default function TakeQuiz() {
             <p>{error}</p>
             <Button
               onClick={() => router.push('/user/dashboard')}
-              className="mt-4"
+              className="mt-4 w-full"
             >
               Retour au tableau de bord
             </Button>
@@ -277,8 +272,8 @@ export default function TakeQuiz() {
 
   if (questions.length === 0) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Card>
+      <div className="flex justify-center items-center h-screen p-4">
+        <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Quiz vide</CardTitle>
           </CardHeader>
@@ -286,7 +281,7 @@ export default function TakeQuiz() {
             <p>Aucune question trouvée pour ce quiz.</p>
             <Button
               onClick={() => router.push('/user/dashboard')}
-              className="mt-4"
+              className="mt-4 w-full"
             >
               Retour au tableau de bord
             </Button>
@@ -303,15 +298,15 @@ export default function TakeQuiz() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="container mx-auto py-8"
+        className="container mx-auto py-8 px-4"
       >
         <Card className="w-full max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle>Résultats du Quiz</CardTitle>
-            <CardDescription>{quizTitle}</CardDescription>
+            <CardTitle className="text-xl sm:text-2xl">Résultats du Quiz</CardTitle>
+            <CardDescription className="text-sm sm:text-base">{quizTitle}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold mb-4">
+            <p className="text-xl sm:text-2xl font-bold mb-4">
               Votre score : {score} / {questions.length}
             </p>
             <Progress
@@ -326,32 +321,30 @@ export default function TakeQuiz() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="mb-4 p-4 border rounded-lg"
               >
-                <p className="font-semibold mb-2">{question.text}</p>
+                <p className="font-semibold mb-2 text-sm sm:text-base">{question.text}</p>
                 <div className="flex items-center">
                   <p
-                    className={
+                    className={`text-sm sm:text-base ${
                       quizState.answers[index] === question.correctAnswer
                         ? 'text-green-600 flex items-center'
                         : 'text-red-600 flex items-center'
-                    }
+                    }`}
                   >
                     {quizState.answers[index] === question.correctAnswer ? (
-                      <Check className="mr-2" />
+                      <Check className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                     ) : (
-                      <X className="mr-2" />
+                      <X className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                     )}
-                    Votre réponse :{' '}
-                    {question.options[quizState.answers[index]]}
+                    Votre réponse : {question.options[quizState.answers[index]]}
                   </p>
                 </div>
                 {quizState.answers[index] !== question.correctAnswer && (
-                  <p className="text-green-600 mt-2">
+                  <p className="text-green-600 mt-2 text-sm sm:text-base">
                     Réponse correcte : {question.options[question.correctAnswer]}
                   </p>
                 )}
               </motion.div>
             ))}
-            {/* Afficher l'option d'évaluation si l'utilisateur n'est pas le créateur et n'a pas déjà évalué */}
             {session?.user?.id !== quizCreatorId && !hasRated && (
               <div className="mt-6">
                 <h3 className="text-lg font-semibold mb-2">Évaluez ce quiz :</h3>
@@ -365,15 +358,12 @@ export default function TakeQuiz() {
                 />
               </div>
             )}
-
-            {/* Message si l'utilisateur a déjà évalué */}
             {hasRated && (
-              <p className="mt-6 text-green-600">Vous avez déjà évalué ce quiz. Merci !</p>
+              <p className="mt-6 text-green-600 text-sm sm:text-base">Vous avez déjà évalué ce quiz. Merci pour votre retour !</p>
             )}
-
-            <div className="flex justify-between mt-6">
-              <Button onClick={resetQuiz}>Recommencer le Quiz</Button>
-              <Button onClick={() => router.push('/user/dashboard')}>
+            <div className="flex flex-col sm:flex-row justify-between mt-6 gap-4">
+              <Button onClick={resetQuiz} className="w-full sm:w-auto">Recommencer le Quiz</Button>
+              <Button onClick={() => router.push('/user/dashboard')} className="w-full sm:w-auto">
                 Retour au tableau de bord
               </Button>
             </div>
@@ -390,13 +380,13 @@ export default function TakeQuiz() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="container mx-auto py-8"
+      className="container mx-auto py-8 px-4"
     >
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>{quizTitle}</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">{quizTitle}</CardTitle>
           {timeLeft !== null && (
-            <CardDescription>
+            <CardDescription className="text-sm sm:text-base">
               Temps restant: {Math.floor(timeLeft / 60)}:
               {(timeLeft % 60).toString().padStart(2, '0')}
             </CardDescription>
@@ -415,10 +405,10 @@ export default function TakeQuiz() {
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.3 }}
             >
-              <h2 className="text-xl font-bold mb-4">
+              <h2 className="text-lg sm:text-xl font-bold mb-4">
                 Question {quizState.currentQuestion + 1} sur {questions.length}
               </h2>
-              <p className="mb-4">{currentQuestion.text}</p>
+              <p className="mb-4 text-sm sm:text-base">{currentQuestion.text}</p>
               <RadioGroup
                 onValueChange={(value) => handleAnswer(parseInt(value))}
                 value={
@@ -434,22 +424,24 @@ export default function TakeQuiz() {
                       value={index.toString()}
                       id={`option-${index}`}
                     />
-                    <Label htmlFor={`option-${index}`}>{option}</Label>
+                    <Label htmlFor={`option-${index}`} className="text-sm sm:text-base">{option}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </motion.div>
           </AnimatePresence>
-          <div className="flex justify-between mt-6">
+          <div className="flex flex-col sm:flex-row justify-between mt-6 gap-4">
             <Button
               onClick={goToPreviousQuestion}
               disabled={quizState.currentQuestion === 0}
+              className="w-full sm:w-auto"
             >
               <ChevronLeft className="mr-2 h-4 w-4" /> Précédent
             </Button>
             <Button
               onClick={goToNextQuestion}
               disabled={quizState.answers[quizState.currentQuestion] === null}
+              className="w-full sm:w-auto"
             >
               {quizState.currentQuestion === questions.length - 1
                 ? 'Terminer'
@@ -458,7 +450,7 @@ export default function TakeQuiz() {
             </Button>
           </div>
           <div className="flex justify-center mt-4">
-            <Button onClick={finishQuiz} variant="destructive">
+            <Button onClick={finishQuiz} variant="destructive" className="w-full sm:w-auto">
               Terminer le Quiz
             </Button>
           </div>

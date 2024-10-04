@@ -44,10 +44,10 @@ export async function GET(request: NextRequest, { params }: { params: { quizId: 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { quizId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   await dbConnect();
 
-  const { quizId } = params;
+  const quizId = params.id;
   const { rating }: { rating: number } = await request.json();
 
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -62,6 +62,7 @@ export async function POST(request: NextRequest, { params }: { params: { quizId:
 
   try {
     const quiz = (await Quiz.findById(quizId)) as QuizType | null;
+    
 
     if (!quiz) {
       return NextResponse.json({ message: 'Quiz non trouvé.' }, { status: 404 });
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest, { params }: { params: { quizId:
     const existingRating = quiz.ratings.find((r) => r.user.toString() === token.id);
 
     if (existingRating) {
-      return NextResponse.json({ message: 'Vous avez déjà évalué ce quiz.' }, { status: 400 });
+      return NextResponse.json({ message: 'Vous avez déjà évalué ce quiz.',hasRated:true }, { status: 400 });
     }
 
     // Ajouter la nouvelle évaluation

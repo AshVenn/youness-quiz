@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import {
+  Play,
   Loader2,
   BookOpen,
   Trash2,
@@ -334,9 +335,9 @@ export default function QuizzesPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="container mx-auto py-6 px-4 sm:px-6 lg:px-8"
+      className="container mx-auto py-4 px-4 sm:px-6 lg:px-8"
     >
-      <h1 className="text-3xl font-bold mb-6">Mes Quiz</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4">Mes Quiz</h1>
       <DragDropContext onDragEnd={onDragEnd}>
         {subjects.length === 0 ? (
           <p className="text-center text-gray-500">
@@ -349,9 +350,9 @@ export default function QuizzesPage() {
                 <div
                   {...provided.droppableProps}
                   ref={provided.innerRef}
-                  className="mb-8"
+                  className="mb-6"
                 >
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
                     {editingSubject === subject.id ? (
                       <div className="flex items-center flex-grow mr-2">
                         <Input
@@ -361,12 +362,13 @@ export default function QuizzesPage() {
                         />
                         <Button
                           onClick={() => handleRenameSubject(subject.name)}
+                          size="sm"
                         >
                           <Save className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
-                      <h2 className="text-2xl font-semibold">
+                      <h2 className="text-xl font-semibold">
                         {subject.name}
                       </h2>
                     )}
@@ -376,6 +378,7 @@ export default function QuizzesPage() {
                           setEditingSubject(subject.id)
                           setNewSubjectName(subject.name)
                         }}
+                        size="sm"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -384,6 +387,7 @@ export default function QuizzesPage() {
                           <Button
                             variant="destructive"
                             className="flex items-center"
+                            size="sm"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -415,7 +419,7 @@ export default function QuizzesPage() {
 
                   {groupedQuizzes[subject.id] &&
                   groupedQuizzes[subject.id].length > 0 ? (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-4">
                       {groupedQuizzes[subject.id].map(
                         (quiz: Quiz, index: number) => (
                           <Draggable
@@ -428,37 +432,39 @@ export default function QuizzesPage() {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className="hover:shadow-lg transition-shadow"
+                                className="hover:shadow-md transition-shadow"
                               >
-                                <CardHeader>
-                                  <CardTitle className="flex items-center justify-between">
+                                <CardHeader className="p-4">
+                                  <CardTitle className="text-lg flex items-center justify-between">
                                     <span className="truncate">
                                       {quiz.prompt}
                                     </span>
                                     <BookOpen className="h-5 w-5 text-gray-400" />
                                   </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                  <p className="text-sm text-gray-500 mb-4">
+                                <CardContent className="p-4 pt-0">
+                                  <p className="text-sm text-gray-500 mb-2">
                                     Créé le{' '}
                                     {new Date(
                                       quiz.createdAt
                                     ).toLocaleDateString()}
                                   </p>
-                                  <p className="text-sm mb-4">
+                                  <p className="text-sm mb-3">
                                     {quiz.questionsCount} question
                                     {quiz.questionsCount > 1 ? 's' : ''}
                                   </p>
-                                  <div className="flex space-x-2">
+                                  <div className="flex flex-wrap gap-2">
                                     <Button
                                       onClick={() =>
                                         router.push(
                                           `/user/takequiz/${quiz.id}`
                                         )
                                       }
-                                      className="flex-1"
+                                      size="sm"
+                                      className="flex-grow"
                                     >
-                                      Reprendre le Quiz
+                                      <Play className="h-4 w-4 mr-2" />
+                                      Reprendre
                                     </Button>
                                     <Button
                                       onClick={() =>
@@ -468,22 +474,25 @@ export default function QuizzesPage() {
                                           quiz.timerDuration
                                         )
                                       }
+                                      size="sm"
                                     >
                                       <BarChart2 className="h-4 w-4" />
                                     </Button>
                                     <Button
                                       onClick={() => openDetailsDialog(quiz.id)}
+                                      size="sm"
                                     >
                                       <Info className="h-4 w-4" />
                                     </Button>
                                     <Button
                                       onClick={() => openSettingsDialog(quiz)}
+                                      size="sm"
                                     >
                                       <Settings className="h-4 w-4" />
                                     </Button>
                                     <Dialog>
                                       <DialogTrigger asChild>
-                                        <Button className="flex items-center">
+                                        <Button className="flex items-center" size="sm">
                                           <Trash2 className="h-4 w-4" />
                                         </Button>
                                       </DialogTrigger>
@@ -556,7 +565,6 @@ export default function QuizzesPage() {
                 onChange={(e) => setUpdatedQuizData({ ...updatedQuizData, timerDuration: Number(e.target.value) })}
               />
             </div>
-            {/* Ajoutez d'autres paramètres si nécessaire */}
           </div>
           <DialogFooter>
             <Button
@@ -579,10 +587,9 @@ export default function QuizzesPage() {
               <p><strong>Titre :</strong> {quizDetails.quiz.prompt}</p>
               <p><strong>Créé le :</strong> {new Date(quizDetails.quiz.createdAt).toLocaleDateString()}</p>
               <p><strong>Nombre de questions :</strong> {quizDetails.quiz.questionsCount}</p>
-              <p><strong>Note moyenne :</strong> {quizDetails.quiz.averageRating} ({quizDetails.quiz.ratingCount} avis)</p>
+              <p><strong>Note moyenne :</strong> {quizDetails.quiz.averageRating.toFixed(1)} ({quizDetails.quiz.ratingCount} avis)</p>
               <p><strong>Nombre total de tentatives :</strong> {quizDetails.statistics.totalAttempts}</p>
               <p><strong>Nombre total d'utilisateurs ayant pris le quiz :</strong> {quizDetails.statistics.totalUsers}</p>
-              {/* Ajoutez d'autres détails si nécessaire */}
             </div>
           ) : (
             <p>Chargement des détails...</p>

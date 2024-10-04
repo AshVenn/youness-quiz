@@ -116,7 +116,7 @@ export function AnalyticsDrawer({
 
   return (
     <Drawer open={isOpen} onClose={onClose}>
-      <DrawerContent className="h-screen w-full max-w-[90vw] md:max-w-[70vw] lg:max-w-[50vw] flex flex-col">
+      <DrawerContent className="h-screen w-full max-w-[90vw] md:max-w-[70vw] lg:max-w-[50vw] flex flex-col overflow-auto">
         {/* Header */}
         <div className="p-6">
           <DrawerHeader className="flex justify-between items-center">
