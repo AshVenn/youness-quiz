@@ -1,67 +1,55 @@
-import { NextResponse } from 'next/server';
-import mongoose from 'mongoose';
-import { dbConnect } from '@/lib/db/db';
-import { Attempt } from '@/lib/models/models'; // Ensure the Attempt model is properly defined
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/authOptions';
+// /app/api/attempt/route.ts
 
-interface AttemptRequestBody {
-  quizId: string;
-  answers: (number | null)[]; // Accept either numbers or nulls for unanswered questions
-  score: number;
-  timeTaken?: number; // Optional
-}
+import { NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/db/db';
+import { Attempt, Quiz, User } from '@/lib/models/models';
+import { getToken } from 'next-auth/jwt';
 
 export async function POST(request: Request) {
   await dbConnect();
 
-  const session = await getServerSession(authOptions);
+  const { quizId, answers, score, timeTaken } = await request.json();
 
-  if (!session) {
-    return NextResponse.json(
-      { message: 'Non autorisé.' },
-      { status: 401 }
-    );
+  const token = await getToken({ req: request as any, secret: process.env.NEXTAUTH_SECRET });
+
+  if (!token || !token.id) {
+    return NextResponse.json({ message: 'Non autorisé. Veuillez vous connecter.' }, { status: 401 });
   }
 
   try {
-    // Parse the request body and validate the structure
-    const { quizId, answers, score, timeTaken }: AttemptRequestBody = await request.json();
+    const user = await User.findById(token.id);
 
-    // Ensure answers array contains null for any unanswered questions
-    const processedAnswers = answers.map(answer => (answer === undefined ? null : answer));
+    if (!user) {
+      return NextResponse.json({ message: 'Utilisateur non trouvé.' }, { status: 404 });
+    }
 
-    // Find the number of previous attempts by the user for the same quiz
-    const previousAttemptsCount = await Attempt.countDocuments({
-      user: new mongoose.Types.ObjectId(session.user.id),
-      quiz: new mongoose.Types.ObjectId(quizId),
-    });
+    const quiz = await Quiz.findById(quizId);
 
-    // Set the attemptNumber dynamically based on previous attempts
-    const attemptNumber = previousAttemptsCount + 1;
+    if (!quiz) {
+      return NextResponse.json({ message: 'Quiz non trouvé.' }, { status: 404 });
+    }
 
-    // Save the new attempt to the database
-    const attempt = new Attempt({
-      user: new mongoose.Types.ObjectId(session.user.id), // Ensure correct ObjectId type
-      quiz: new mongoose.Types.ObjectId(quizId),
-      answers: processedAnswers,
+    // Incrémenter le nombre de tentatives
+    quiz.attemptCount += 1;
+    await quiz.save();
+
+    // Créer la nouvelle tentative
+    const attemptNumber = await Attempt.countDocuments({ user: user._id, quiz: quiz._id }) + 1;
+
+    const newAttempt = new Attempt({
+      user: user._id,
+      quiz: quiz._id,
+      answers,
       score,
-      attemptNumber, // Set dynamically based on previous attempts
+      attemptNumber,
       timeTaken,
-      createdAt: new Date(),
     });
 
-    await attempt.save();
+    await newAttempt.save();
 
-    return NextResponse.json(
-      { message: 'Tentative enregistrée avec succès.' },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Tentative enregistrée avec succès.' }, { status: 200 });
   } catch (error) {
     console.error('Error saving attempt:', error);
-    return NextResponse.json(
-      { message: 'Erreur lors de l\'enregistrement de la tentative.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Erreur lors de l\'enregistrement de la tentative.' }, { status: 500 });
   }
 }

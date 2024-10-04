@@ -1,3 +1,5 @@
+// TakeQuiz.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,6 +12,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Loader2, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSession } from 'next-auth/react';
+import { CommentRatings } from '@/components/CommentRatings';
 
 interface Question {
   text: string;
@@ -35,14 +39,19 @@ export default function TakeQuiz() {
   const [error, setError] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [quizFinished, setQuizFinished] = useState<boolean>(false);
-  const [startTime, setStartTime] = useState<number | null>(null); // Added startTime state
+  const [startTime, setStartTime] = useState<number | null>(null);
+
+  const [quizCreatorId, setQuizCreatorId] = useState<string>('');
+  const [hasRated, setHasRated] = useState<boolean>(false);
+  const [userRating, setUserRating] = useState<number>(0);
 
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
+  const { data: session } = useSession();
   const quizId = Array.isArray(params.quizId) ? params.quizId[0] : params.quizId;
 
-  // Fetch quiz data when the component mounts
+  // Récupérer les données du quiz au chargement du composant
   useEffect(() => {
     if (quizId) {
       setLoading(true);
@@ -50,7 +59,7 @@ export default function TakeQuiz() {
     }
   }, [quizId]);
 
-  // Timer effect to count down the remaining time
+  // Effet pour gérer le timer du quiz
   useEffect(() => {
     if (timeLeft === 0 && !quizFinished) {
       finishQuiz();
@@ -64,7 +73,7 @@ export default function TakeQuiz() {
         );
       }, 1000);
 
-      return () => clearInterval(intervalId); // Cleanup interval
+      return () => clearInterval(intervalId); // Nettoyage de l'intervalle
     }
   }, [timeLeft, quizFinished]);
 
@@ -78,19 +87,34 @@ export default function TakeQuiz() {
 
       setQuestions(data.questions);
       setQuizTitle(data.prompt);
+      setQuizCreatorId(data.createdBy); // Récupérer l'ID du créateur du quiz
       setQuizState((prev) => ({
         ...prev,
         answers: new Array(data.questions.length).fill(null),
       }));
 
-      // Set timer if it is enabled and duration is provided
+      // Définir le timer si activé
       if (data.timerEnabled && data.timerDuration) {
-        setTimeLeft(data.timerDuration); // Set the timer duration
+        setTimeLeft(data.timerDuration); // Durée du timer
       }
 
-      setStartTime(Date.now()); // Set the start time
+      setStartTime(Date.now()); // Heure de début du quiz
 
       setLoading(false);
+
+      // Vérifier si l'utilisateur a déjà évalué le quiz
+      if (session?.user?.id) {
+        const ratingResponse = await fetch(`/api/quiz/${id}/rating`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (ratingResponse.ok) {
+          const ratingData = await ratingResponse.json();
+          const userHasRated = ratingData.userHasRated;
+          setHasRated(userHasRated);
+        }
+      }
     } catch (error) {
       console.error(error);
       setError('Erreur lors du chargement du quiz.');
@@ -136,9 +160,9 @@ export default function TakeQuiz() {
       showResults: false,
     });
     setQuizFinished(false);
-    setStartTime(Date.now()); // Reset start time
+    setStartTime(Date.now()); // Réinitialiser l'heure de début
     if (timeLeft !== null) {
-      setTimeLeft(questions.length * 60); // Reset timer if it was enabled
+      setTimeLeft(questions.length * 60); // Réinitialiser le timer si activé
     }
   };
 
@@ -151,7 +175,7 @@ export default function TakeQuiz() {
   };
 
   const finishQuiz = async () => {
-    // Prevent the function from running multiple times
+    // Éviter les appels multiples
     if (quizFinished) return;
 
     setQuizState((prev) => ({ ...prev, showResults: true }));
@@ -161,7 +185,7 @@ export default function TakeQuiz() {
     const endTime = Date.now();
     const timeTaken = startTime
       ? Math.floor((endTime - startTime) / 1000)
-      : null; // Calculate time in seconds
+      : null; // Temps pris en secondes
 
     try {
       const response = await fetch('/api/attempt', {
@@ -188,6 +212,35 @@ export default function TakeQuiz() {
         title: 'Erreur',
         description:
           "Impossible d'enregistrer votre tentative. Veuillez réessayer.",
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const submitRating = async (rating: number) => {
+    if (!session || !session.user || hasRated) return;
+
+    try {
+      const response = await fetch(`/api/quiz/${quizId}/rating`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit rating');
+      }
+
+      setHasRated(true);
+      toast({
+        title: 'Merci pour votre évaluation !',
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de soumettre votre évaluation.',
         variant: 'destructive',
       });
     }
@@ -298,6 +351,26 @@ export default function TakeQuiz() {
                 )}
               </motion.div>
             ))}
+            {/* Afficher l'option d'évaluation si l'utilisateur n'est pas le créateur et n'a pas déjà évalué */}
+            {session?.user?.id !== quizCreatorId && !hasRated && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">Évaluez ce quiz :</h3>
+                <CommentRatings
+                  rating={userRating}
+                  onRatingChange={(rating) => {
+                    setUserRating(rating);
+                    submitRating(rating);
+                  }}
+                  size={24}
+                />
+              </div>
+            )}
+
+            {/* Message si l'utilisateur a déjà évalué */}
+            {hasRated && (
+              <p className="mt-6 text-green-600">Vous avez déjà évalué ce quiz. Merci !</p>
+            )}
+
             <div className="flex justify-between mt-6">
               <Button onClick={resetQuiz}>Recommencer le Quiz</Button>
               <Button onClick={() => router.push('/user/dashboard')}>

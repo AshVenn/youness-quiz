@@ -19,14 +19,15 @@ interface Subject {
 }
 
 export default function GenerateQuizPage() {
+  const [title, setTitle] = useState(''); // Added title state
   const [prompt, setPrompt] = useState('');
   const [difficulty, setDifficulty] = useState('');
-  const [subject, setSubject] = useState<string>(''); // We'll store the subject ID here
+  const [subject, setSubject] = useState<string>(''); 
   const [timerEnabled, setTimerEnabled] = useState(false);
-  const [timerDuration, setTimerDuration] = useState(0); // Duration in seconds
+  const [timerDuration, setTimerDuration] = useState(0); 
   const [isLoading, setIsLoading] = useState(false);
-  const [useExistingSubject, setUseExistingSubject] = useState(false); // Toggle between new or existing subjects
-  const [existingSubjects, setExistingSubjects] = useState<Subject[]>([]); // Load user's existing subjects
+  const [useExistingSubject, setUseExistingSubject] = useState(false);
+  const [existingSubjects, setExistingSubjects] = useState<Subject[]>([]);
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
   const { data: session } = useSession();
   const router = useRouter();
@@ -98,7 +99,7 @@ export default function GenerateQuizPage() {
       const quizResponse = await fetch('/api/quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, difficulty, subject, timerEnabled, timerDuration }),
+        body: JSON.stringify({ title, prompt, difficulty, subject, timerEnabled, timerDuration }), // Including title in the request
       });
 
       if (!quizResponse.ok) {
@@ -141,6 +142,13 @@ export default function GenerateQuizPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            <Input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Titre du Quiz (Ex: La Révolution Française)"
+              className="w-full"
+            />
             <Input
               type="text"
               value={prompt}
@@ -214,7 +222,7 @@ export default function GenerateQuizPage() {
             )}
             <Button
               onClick={handleSubmit}
-              disabled={isLoading || !prompt || !difficulty || !subject || (remainingAttempts !== null && remainingAttempts <= 0)}
+              disabled={isLoading || !title || !prompt || !difficulty || !subject || (remainingAttempts !== null && remainingAttempts <= 0)}
               className="w-full"
             >
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookOpen className="mr-2 h-4 w-4" />}

@@ -1,3 +1,5 @@
+// QuizzesPage.tsx
+
 'use client'
 
 import React, { useState } from 'react'
@@ -20,6 +22,8 @@ import {
   Edit,
   Save,
   BarChart2,
+  Settings,
+  Info,
 } from 'lucide-react'
 import {
   Dialog,
@@ -29,6 +33,8 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { AnalyticsDrawer } from '@/components/AnalyticsDrawer'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -38,8 +44,13 @@ type Quiz = {
   prompt: string
   createdAt: string
   questionsCount: number
-  subject: string
-  timerDuration: number // Added timerDuration here
+  subject: string | null
+  difficulty: string
+  timerDuration: number
+  averageRating: number
+  ratingCount: number
+  attemptCount: number
+  public: boolean
 }
 
 type Subject = {
@@ -54,35 +65,20 @@ type Attempt = {
   timeTaken: number
 }
 
-const fetchQuizzes = async (userId: string) => {
-  const response = await fetch(`/api/user/${userId}/quizzes`)
-  if (!response.ok) throw new Error('Failed to fetch quizzes')
-  return response.json()
-}
-
-const fetchSubjects = async (userId: string) => {
-  const response = await fetch(`/api/user/${userId}/subject`)
-  if (!response.ok) throw new Error('Failed to fetch subjects')
-  return response.json()
-}
-
-const fetchAttempts = async (userId: string, quizId: string) => {
-  if (!quizId) throw new Error('Invalid quiz ID')
-  const response = await fetch(
-    `/api/user/${userId}/quizzes/${quizId}/attempts`
-  )
-  
-  if (!response.ok) throw new Error('Failed to fetch attempts')
-  return response.json()
-}
-
 export default function QuizzesPage() {
   const [editingSubject, setEditingSubject] = useState<string | null>(null)
   const [newSubjectName, setNewSubjectName] = useState('')
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null)
   const [selectedQuizName, setSelectedQuizName] = useState<string | null>(null)
-  const [selectedtimerDuration, setSelectedtimerDuration] = useState<number | null>(null) // Added state for timerDuration
+  const [selectedtimerDuration, setSelectedtimerDuration] = useState<number | null>(null)
+
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+  const [quizToEdit, setQuizToEdit] = useState<Quiz | null>(null)
+  const [updatedQuizData, setUpdatedQuizData] = useState<Partial<Quiz>>({})
+
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [quizDetails, setQuizDetails] = useState<any>(null)
 
   const { data: session } = useSession()
   const router = useRouter()
@@ -93,7 +89,7 @@ export default function QuizzesPage() {
     queryKey: ['quizzes', session?.user?.id],
     queryFn: () => fetchQuizzes(session?.user?.id as string),
     enabled: !!session?.user?.id,
-  })
+  });
 
   const { data: subjectsData, isLoading: isLoadingSubjects } = useQuery({
     queryKey: ['subjects', session?.user?.id],
@@ -246,9 +242,72 @@ export default function QuizzesPage() {
   ) => {
     setSelectedQuizId(quizId)
     setSelectedQuizName(quizName)
-    setSelectedtimerDuration(timerDuration) // Set the selected timerDuration
+    setSelectedtimerDuration(timerDuration)
     setAnalyticsOpen(true)
   }
+
+  const openSettingsDialog = (quiz: Quiz) => {
+    setQuizToEdit(quiz)
+    setUpdatedQuizData({
+      public: quiz.public,
+      timerDuration: quiz.timerDuration,
+      // Ajoutez d'autres champs si nécessaire
+    })
+    setIsSettingsDialogOpen(true)
+  }
+
+  const handleUpdateQuizSettings = async () => {
+    if (!quizToEdit) return
+    try {
+      const response = await fetch(`/api/user/${session?.user?.id}/quizzes/${quizToEdit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedQuizData),
+      })
+      if (!response.ok) throw new Error('Failed to update quiz settings')
+      const data = await response.json()
+      queryClient.invalidateQueries({ queryKey: ['quizzes', session?.user?.id] })
+      setIsSettingsDialogOpen(false)
+      toast({
+        title: 'Succès',
+        description: 'Les paramètres du quiz ont été mis à jour.',
+        variant: 'success',
+      })
+    } catch (error) {
+      console.error('Error updating quiz settings:', error)
+      toast({
+        title: 'Erreur',
+        description: 'Échec de la mise à jour des paramètres du quiz.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const openDetailsDialog = async (quizId: string) => {
+    if (!session?.user?.id) {
+      toast({
+        title: 'Erreur',
+        description: 'Vous devez être connecté pour voir les détails du quiz.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/user/${session.user.id}/quizzes/${quizId}`);
+      if (!response.ok) throw new Error('Failed to fetch quiz details');
+      const data = await response.json();
+      setQuizDetails(data);
+      setIsDetailsDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching quiz details:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Échec de la récupération des détails du quiz.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   if (isLoadingQuizzes || isLoadingSubjects) {
     return (
@@ -263,8 +322,8 @@ export default function QuizzesPage() {
 
   const groupedQuizzes = quizzes.reduce(
     (acc: Record<string, Quiz[]>, quiz: Quiz) => {
-      if (!acc[quiz.subject]) acc[quiz.subject] = []
-      acc[quiz.subject].push(quiz)
+      if (!acc[quiz.subject || 'Sans Sujet']) acc[quiz.subject || 'Sans Sujet'] = []
+      acc[quiz.subject || 'Sans Sujet'].push(quiz)
       return acc
     },
     {}
@@ -406,11 +465,21 @@ export default function QuizzesPage() {
                                         handleAnalytics(
                                           quiz.id,
                                           quiz.prompt,
-                                          quiz.timerDuration // Pass timerDuration here
+                                          quiz.timerDuration
                                         )
                                       }
                                     >
                                       <BarChart2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      onClick={() => openDetailsDialog(quiz.id)}
+                                    >
+                                      <Info className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      onClick={() => openSettingsDialog(quiz)}
+                                    >
+                                      <Settings className="h-4 w-4" />
                                     </Button>
                                     <Dialog>
                                       <DialogTrigger asChild>
@@ -460,13 +529,99 @@ export default function QuizzesPage() {
           ))
         )}
       </DragDropContext>
+
+      {/* Dialog pour les paramètres du quiz */}
+      <Dialog open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Paramètres du Quiz</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center space-x-2">
+              <Label>Rendre le quiz public</Label>
+              <Switch
+                checked={updatedQuizData.public}
+                onCheckedChange={(value) => setUpdatedQuizData({ ...updatedQuizData, public: value })}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="timerDuration" className="text-right">
+                Durée du timer (secondes)
+              </Label>
+              <Input
+                id="timerDuration"
+                type="number"
+                className="col-span-3"
+                value={updatedQuizData.timerDuration || 0}
+                onChange={(e) => setUpdatedQuizData({ ...updatedQuizData, timerDuration: Number(e.target.value) })}
+              />
+            </div>
+            {/* Ajoutez d'autres paramètres si nécessaire */}
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => handleUpdateQuizSettings()}
+            >
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour les détails du quiz */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Détails du Quiz</DialogTitle>
+          </DialogHeader>
+          {quizDetails ? (
+            <div className="py-4">
+              <p><strong>Titre :</strong> {quizDetails.quiz.prompt}</p>
+              <p><strong>Créé le :</strong> {new Date(quizDetails.quiz.createdAt).toLocaleDateString()}</p>
+              <p><strong>Nombre de questions :</strong> {quizDetails.quiz.questionsCount}</p>
+              <p><strong>Note moyenne :</strong> {quizDetails.quiz.averageRating} ({quizDetails.quiz.ratingCount} avis)</p>
+              <p><strong>Nombre total de tentatives :</strong> {quizDetails.statistics.totalAttempts}</p>
+              <p><strong>Nombre total d'utilisateurs ayant pris le quiz :</strong> {quizDetails.statistics.totalUsers}</p>
+              {/* Ajoutez d'autres détails si nécessaire */}
+            </div>
+          ) : (
+            <p>Chargement des détails...</p>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsDetailsDialogOpen(false)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AnalyticsDrawer
         isOpen={analyticsOpen}
         onClose={() => setAnalyticsOpen(false)}
         quizName={selectedQuizName || ''}
         attempts={attemptsData?.attempts || []}
-        timerDuration={selectedtimerDuration || 0} // Pass selectedtimerDuration here
+        timerDuration={selectedtimerDuration || 0}
       />
     </motion.div>
   )
+}
+
+async function fetchQuizzes(userId: string) {
+  const response = await fetch(`/api/user/${userId}/quizzes`)
+  if (!response.ok) throw new Error('Failed to fetch quizzes')
+  return response.json()
+}
+
+async function fetchSubjects(userId: string) {
+  const response = await fetch(`/api/user/${userId}/subject`)
+  if (!response.ok) throw new Error('Failed to fetch subjects')
+  return response.json()
+}
+
+async function fetchAttempts(userId: string, quizId: string) {
+  if (!quizId) throw new Error('Invalid quiz ID')
+  const response = await fetch(
+    `/api/user/${userId}/quizzes/${quizId}/attempts`
+  )
+  
+  if (!response.ok) throw new Error('Failed to fetch attempts')
+  return response.json()
 }

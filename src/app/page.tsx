@@ -128,7 +128,7 @@ export default function LandingPage() {
                         <NavigationMenuLink asChild>
                           <a
                             className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
-                            href="/default"
+                            href="/search"
                           >
                             <BookOpen className="h-6 w-6" />
                             <div className="mb-2 mt-4 text-lg font-medium">
@@ -144,7 +144,7 @@ export default function LandingPage() {
                         <NavigationMenuLink asChild>
                           <a
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                            href="/default"
+                            href="/categories"
                           >
                             <div className="text-sm font-medium leading-none">Catégories</div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
@@ -157,7 +157,7 @@ export default function LandingPage() {
                         <NavigationMenuLink asChild>
                           <a
                             className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                            href="/default"
+                            href="/popular"
                           >
                             <div className="text-sm font-medium leading-none">Populaires</div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
@@ -267,17 +267,17 @@ export default function LandingPage() {
                     Quizzes
                     <ul className="ml-6 mt-2 space-y-2">
                       <li>
-                        <Link href="/default" className="block py-2 hover:text-blue-600 transition-colors duration-200">
+                        <Link href="/search" className="block py-2 hover:text-blue-600 transition-colors duration-200">
                           Explorez nos Quizzes
                         </Link>
                       </li>
                       <li>
-                        <Link href="/default" className="block py-2 hover:text-blue-600 transition-colors duration-200">
+                        <Link href="/categories" className="block py-2 hover:text-blue-600 transition-colors duration-200">
                           Catégories
                         </Link>
                       </li>
                       <li>
-                        <Link href="/default" className="block py-2 hover:text-blue-600 transition-colors duration-200">
+                        <Link href="/popular" className="block py-2 hover:text-blue-600 transition-colors duration-200">
                           Populaires
                         </Link>
                       </li>

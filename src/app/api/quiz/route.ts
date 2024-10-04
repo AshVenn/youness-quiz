@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt, difficulty, subject, timerEnabled, timerDuration } = body;
+    const { prompt, difficulty, subject, timerEnabled, timerDuration, title } = body;
 
-    if (!prompt || typeof prompt !== 'string' || !difficulty || !subject) {
-      return NextResponse.json({ message: 'Le prompt, la difficulté ou le sujet sont manquants ou invalides.' }, { status: 400 });
+    if (!prompt || typeof prompt !== 'string' || !difficulty || !subject || !title) {
+      return NextResponse.json({ message: 'Le prompt, la difficulté, le sujet ou le titre sont manquants ou invalides.' }, { status: 400 });
     }
 
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -92,11 +92,12 @@ export async function POST(request: NextRequest) {
     }
 
     const newQuiz = new Quiz({
+      title, // Adding title to the new quiz
       prompt,
       questions: generatedQuestions,
       createdBy: user._id,
       difficulty,
-      subject: subjectId, // Store the subject reference
+      subject: subjectId,
       timerEnabled,
       timerDuration: timerEnabled ? timerDuration : undefined,
     });
