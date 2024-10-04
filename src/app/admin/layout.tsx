@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-
+import { signOut } from 'next-auth/react'
 export default function AdminLayout({
   children,
 }: {
@@ -100,7 +100,7 @@ export default function AdminLayout({
             </nav>
           </div>
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={()=>signOut({ callbackUrl: '/' })}>
               <LogOut className="mr-2 h-4 w-4" />
               Déconnexion
             </Button>

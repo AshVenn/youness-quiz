@@ -34,6 +34,7 @@ const quizSchema = new mongoose.Schema({
   subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: false, default: null },
   timerEnabled: { type: Boolean, default: false },
   timerDuration: { type: Number },
+  featured: { type: Boolean, default: false },
 });
 
 // Attempt Schema
@@ -52,6 +53,7 @@ const subjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now },
+  featured: { type: Boolean, default: false },
 });
 
 // Settings Schema
@@ -63,10 +65,19 @@ const settingsSchema = new mongoose.Schema({
   maxQuestionsPerQuiz: { type: Number, default: 20 },
 });
 
+const requestSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  type: { type: String, required: true },
+  message: { type: String, required: true },
+  status: { type: String, enum: ['En attente', 'Résolu', 'Rejeté'], default: 'En attente' },
+  createdAt: { type: Date, default: Date.now },
+})
+
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Quiz = mongoose.models.Quiz || mongoose.model('Quiz', quizSchema);
 const Attempt = mongoose.models.Attempt || mongoose.model('Attempt', attemptSchema);
 const Subject = mongoose.models.Subject || mongoose.model('Subject', subjectSchema);
 const Settings = mongoose.models.Settings || mongoose.model('Settings', settingsSchema);
+const Request = mongoose.models.Request || mongoose.model('Request', requestSchema)
 
-export { User, Quiz, Attempt, Subject, Settings };
+export { User, Quiz, Attempt, Subject, Settings,Request };

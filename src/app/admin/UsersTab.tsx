@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserPlus, Search, Edit, Trash } from 'lucide-react'
+import { UserPlus, Search, Edit, Trash, Key } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -51,14 +51,24 @@ type User = {
   createdAt: string
 }
 
+type NewUser = {
+  username: string
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  role: string
+}
+
 export default function UsersTab() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false)
-  const [newUser, setNewUser] = useState<Partial<User>>({
+  const [newUser, setNewUser] = useState<NewUser>({
     username: '',
     email: '',
     firstName: '',
     lastName: '',
+    password: '',
     role: 'user',
   })
   const [editUserId, setEditUserId] = useState<string | null>(null)
@@ -66,6 +76,9 @@ export default function UsersTab() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null)
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] =
+    useState(false)
+  const [newPassword, setNewPassword] = useState('')
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -87,7 +100,7 @@ export default function UsersTab() {
 
   // Mutation pour ajouter un utilisateur
   const addUserMutation = useMutation({
-    mutationFn: async (newUser: Partial<User>) => {
+    mutationFn: async (newUser: NewUser) => {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,6 +119,7 @@ export default function UsersTab() {
         email: '',
         firstName: '',
         lastName: '',
+        password: '',
         role: 'user',
       })
       toast({
@@ -190,6 +204,42 @@ export default function UsersTab() {
     },
   })
 
+  // Mutation pour réinitialiser le mot de passe
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      newPassword,
+    }: {
+      userId: string
+      newPassword: string
+    }) => {
+      const res = await fetch(`/api/admin/users/${userId}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      })
+      if (!res.ok) {
+        throw new Error("Erreur lors de la réinitialisation du mot de passe")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      setIsResetPasswordDialogOpen(false)
+      setNewPassword('')
+      toast({
+        title: 'Mot de passe réinitialisé',
+        description: "Le mot de passe a été mis à jour avec succès.",
+      })
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: "Impossible de réinitialiser le mot de passe.",
+        variant: 'destructive',
+      })
+    },
+  })
+
   const handleAddUser = () => {
     addUserMutation.mutate(newUser)
   }
@@ -211,8 +261,19 @@ export default function UsersTab() {
     }
   }
 
+  const handleResetPassword = (userId: string) => {
+    setEditUserId(userId)
+    setIsResetPasswordDialogOpen(true)
+  }
+
+  const handleConfirmResetPassword = () => {
+    if (editUserId) {
+      resetPasswordMutation.mutate({ userId: editUserId, newPassword })
+    }
+  }
+
   if (isLoading) {
-    return <div>Chargement...</div>
+    return <div className="mt-24">Chargement...</div>
   }
 
   if (error) {
@@ -283,6 +344,13 @@ export default function UsersTab() {
                         onClick={() => handleEditUser(user)}
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleResetPassword(user._id)}
+                      >
+                        <Key className="h-4 w-4" />
                       </Button>
                       <Button
                         size="sm"
@@ -361,6 +429,20 @@ export default function UsersTab() {
                   value={newUser.email}
                   onChange={(e) =>
                     setNewUser({ ...newUser, email: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="password" className="text-right">
+                  Mot de passe
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  className="col-span-3"
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
                   }
                 />
               </div>
@@ -477,6 +559,40 @@ export default function UsersTab() {
             <DialogFooter>
               <Button type="submit" onClick={handleUpdateUser}>
                 Mettre à jour
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog pour réinitialiser le mot de passe */}
+        <Dialog
+          open={isResetPasswordDialogOpen}
+          onOpenChange={setIsResetPasswordDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Réinitialiser le Mot de Passe</DialogTitle>
+              <DialogDescription>
+                Entrez un nouveau mot de passe pour l'utilisateur.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="new-password" className="text-right">
+                  Nouveau Mot de Passe
+                </Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  className="col-span-3"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" onClick={handleConfirmResetPassword}>
+                Réinitialiser
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusCircle, Search, Edit, Trash } from 'lucide-react'
+import { PlusCircle, Search, Edit, Trash, Star } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
@@ -39,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 
 type Category = {
   _id: string
@@ -48,9 +50,11 @@ type Category = {
 type Quiz = {
   _id: string
   title: string
-  category: string // Utiliser 'string' pour stocker l'ID de la catégorie
+  category: string // ID de la catégorie
   difficulty: string
+  prompt: string
   questionsCount: number
+  featured: boolean // Nouveau champ
 }
 
 export default function QuizzesTab() {
@@ -60,6 +64,9 @@ export default function QuizzesTab() {
     title: '',
     category: '',
     difficulty: 'easy',
+    prompt: '',
+    questionsCount: 5,
+    featured: false,
   })
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [quizIdToDelete, setQuizIdToDelete] = useState<string | null>(null)
@@ -114,6 +121,9 @@ export default function QuizzesTab() {
         title: '',
         category: '',
         difficulty: 'easy',
+        prompt: '',
+        questionsCount: 5,
+        featured: false,
       })
       toast({
         title: 'Quiz ajouté',
@@ -153,6 +163,35 @@ export default function QuizzesTab() {
       toast({
         title: 'Erreur',
         description: 'Impossible de supprimer le quiz.',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  // Mutation pour mettre à jour le statut en vedette d'un quiz
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async (quiz: Quiz) => {
+      const res = await fetch(`/api/admin/quizzes/${quiz._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: !quiz.featured }),
+      })
+      if (!res.ok) {
+        throw new Error("Erreur lors de la mise à jour du quiz")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] })
+      toast({
+        title: 'Quiz mis à jour',
+        description: 'Le statut du quiz a été mis à jour.',
+      })
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le quiz.',
         variant: 'destructive',
       })
     },
@@ -214,7 +253,8 @@ export default function QuizzesTab() {
                 <TableHead>Titre</TableHead>
                 <TableHead>Catégorie</TableHead>
                 <TableHead>Difficulté</TableHead>
-                <TableHead>Nombre de Questions</TableHead>
+                <TableHead>Questions</TableHead>
+                <TableHead>En Vedette</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -227,6 +267,12 @@ export default function QuizzesTab() {
                   </TableCell>
                   <TableCell>{quiz.difficulty}</TableCell>
                   <TableCell>{quiz.questionsCount}</TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={quiz.featured}
+                      onCheckedChange={() => toggleFeaturedMutation.mutate(quiz)}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button size="sm" variant="outline">
@@ -270,6 +316,38 @@ export default function QuizzesTab() {
                   value={newQuiz.title}
                   onChange={(e) =>
                     setNewQuiz({ ...newQuiz, title: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="quiz-prompt" className="text-right">
+                  Prompt
+                </Label>
+                <Textarea
+                  id="quiz-prompt"
+                  className="col-span-3"
+                  value={newQuiz.prompt}
+                  onChange={(e) =>
+                    setNewQuiz({ ...newQuiz, prompt: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="quiz-questions-count" className="text-right">
+                  Nombre de Questions
+                </Label>
+                <Input
+                  id="quiz-questions-count"
+                  type="number"
+                  min={1}
+                  max={20}
+                  className="col-span-3"
+                  value={newQuiz.questionsCount}
+                  onChange={(e) =>
+                    setNewQuiz({
+                      ...newQuiz,
+                      questionsCount: Number(e.target.value),
+                    })
                   }
                 />
               </div>

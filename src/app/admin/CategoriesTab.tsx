@@ -32,10 +32,12 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
+import { Switch } from '@/components/ui/switch'
 
 type Category = {
   _id: string
   name: string
+  featured: boolean
 }
 
 export default function CategoriesTab() {
@@ -166,6 +168,35 @@ export default function CategoriesTab() {
     },
   })
 
+  // Mutation pour changer le statut en vedette
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async (category: Category) => {
+      const res = await fetch(`/api/admin/subjects/${category._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: !category.featured }),
+      })
+      if (!res.ok) {
+        throw new Error("Erreur lors de la mise à jour de la catégorie")
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] })
+      toast({
+        title: 'Catégorie mise à jour',
+        description: 'Le statut de la catégorie a été mis à jour.',
+      })
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: "Impossible de mettre à jour la catégorie.",
+        variant: 'destructive',
+      })
+    },
+  })
+
   const handleAddCategory = () => {
     addCategoryMutation.mutate({ name: newCategoryName })
   }
@@ -231,6 +262,7 @@ export default function CategoriesTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nom de la catégorie</TableHead>
+                <TableHead>En Vedette</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -238,6 +270,14 @@ export default function CategoriesTab() {
               {filteredCategories?.map((category) => (
                 <TableRow key={category._id}>
                   <TableCell>{category.name}</TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={category.featured}
+                      onCheckedChange={() =>
+                        toggleFeaturedMutation.mutate(category)
+                      }
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button
