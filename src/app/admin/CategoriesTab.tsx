@@ -62,18 +62,18 @@ export default function CategoriesTab() {
   } = useQuery<Category[]>({
     queryKey: ['admin-categories'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/subjects')
+      const res = await fetch('/api/admin/categories');
       if (!res.ok) {
-        throw new Error('Erreur lors du chargement des catégories')
+        throw new Error('Erreur lors du chargement des catégories');
       }
-      return res.json()
+      return res.json();
     },
-  })
+  });
 
   // Mutation pour ajouter une catégorie
   const addCategoryMutation = useMutation({
     mutationFn: async (newCategory: { name: string }) => {
-      const res = await fetch('/api/admin/subjects', {
+      const res = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCategory),
@@ -104,7 +104,7 @@ export default function CategoriesTab() {
   // Mutation pour supprimer une catégorie
   const deleteCategoryMutation = useMutation({
     mutationFn: async (categoryId: string) => {
-      const res = await fetch(`/api/admin/subjects/${categoryId}`, {
+      const res = await fetch(`/api/admin/categories/${categoryId}`, {
         method: 'DELETE',
       })
       if (!res.ok) {
@@ -139,7 +139,7 @@ export default function CategoriesTab() {
       categoryId: string
       updatedCategory: { name: string }
     }) => {
-      const res = await fetch(`/api/admin/subjects/${categoryId}`, {
+      const res = await fetch(`/api/admin/categories/${categoryId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedCategory),
@@ -171,7 +171,7 @@ export default function CategoriesTab() {
   // Mutation pour changer le statut en vedette
   const toggleFeaturedMutation = useMutation({
     mutationFn: async (category: Category) => {
-      const res = await fetch(`/api/admin/subjects/${category._id}`, {
+      const res = await fetch(`/api/admin/categories/${category._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ featured: !category.featured }),

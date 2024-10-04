@@ -1,20 +1,20 @@
 // QuizzesTab.tsx
 
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusCircle, Search, Edit, Trash, Star } from 'lucide-react'
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { PlusCircle, Search, Edit, Trash } from 'lucide-react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -22,7 +22,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -30,48 +30,48 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { useToast } from '@/hooks/use-toast'
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
-type Category = {
-  _id: string
-  name: string
-}
+type Subject = {
+  _id: string;
+  name: string;
+};
 
 type Quiz = {
-  _id: string
-  title: string
-  category: string // ID de la catégorie
-  difficulty: string
-  prompt: string
-  questionsCount: number
-  featured: boolean // Nouveau champ
-}
+  _id: string;
+  title: string;
+  subject: string; // ID du sujet
+  difficulty: string;
+  prompt: string;
+  questionsCount: number;
+  featured: boolean; // Champ pour indiquer si le quiz est en vedette
+};
 
 export default function QuizzesTab() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isAddQuizDialogOpen, setIsAddQuizDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAddQuizDialogOpen, setIsAddQuizDialogOpen] = useState(false);
   const [newQuiz, setNewQuiz] = useState<Partial<Quiz>>({
     title: '',
-    category: '',
+    subject: '',
     difficulty: 'easy',
     prompt: '',
     questionsCount: 5,
     featured: false,
-  })
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [quizIdToDelete, setQuizIdToDelete] = useState<string | null>(null)
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
+  });
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [quizIdToDelete, setQuizIdToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Récupération des quiz
   const {
@@ -81,25 +81,25 @@ export default function QuizzesTab() {
   } = useQuery<Quiz[]>({
     queryKey: ['admin-quizzes'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/quizzes')
+      const res = await fetch('/api/admin/quizzes');
       if (!res.ok) {
-        throw new Error('Erreur lors du chargement des quiz')
+        throw new Error('Erreur lors du chargement des quiz');
       }
-      return res.json()
+      return res.json();
     },
-  })
+  });
 
-  // Récupération des catégories
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: ['admin-categories'],
+  // Récupération des sujets
+  const { data: subjects } = useQuery<Subject[]>({
+    queryKey: ['admin-subjects'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/subjects')
+      const res = await fetch('/api/admin/subjects');
       if (!res.ok) {
-        throw new Error('Erreur lors du chargement des catégories')
+        throw new Error('Erreur lors du chargement des sujets');
       }
-      return res.json()
+      return res.json();
     },
-  })
+  });
 
   // Mutation pour ajouter un quiz
   const addQuizMutation = useMutation({
@@ -108,65 +108,65 @@ export default function QuizzesTab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newQuiz),
-      })
+      });
       if (!res.ok) {
-        throw new Error("Erreur lors de l'ajout du quiz")
+        throw new Error("Erreur lors de l'ajout du quiz");
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] })
-      setIsAddQuizDialogOpen(false)
+      queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] });
+      setIsAddQuizDialogOpen(false);
       setNewQuiz({
         title: '',
-        category: '',
+        subject: '',
         difficulty: 'easy',
         prompt: '',
         questionsCount: 5,
         featured: false,
-      })
+      });
       toast({
         title: 'Quiz ajouté',
         description: 'Le quiz a été ajouté avec succès.',
-      })
+      });
     },
     onError: () => {
       toast({
         title: 'Erreur',
         description: "Impossible d'ajouter le quiz.",
         variant: 'destructive',
-      })
+      });
     },
-  })
+  });
 
   // Mutation pour supprimer un quiz
   const deleteQuizMutation = useMutation({
     mutationFn: async (quizId: string) => {
       const res = await fetch(`/api/admin/quizzes/${quizId}`, {
         method: 'DELETE',
-      })
+      });
       if (!res.ok) {
-        throw new Error('Erreur lors de la suppression du quiz')
+        throw new Error('Erreur lors de la suppression du quiz');
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] })
-      setIsDeleteDialogOpen(false)
-      setQuizIdToDelete(null)
+      queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] });
+      setIsDeleteDialogOpen(false);
+      setQuizIdToDelete(null);
       toast({
         title: 'Quiz supprimé',
         description: 'Le quiz a été supprimé avec succès.',
-      })
+      });
     },
     onError: () => {
       toast({
         title: 'Erreur',
         description: 'Impossible de supprimer le quiz.',
         variant: 'destructive',
-      })
+      });
     },
-  })
+  });
 
   // Mutation pour mettre à jour le statut en vedette d'un quiz
   const toggleFeaturedMutation = useMutation({
@@ -175,52 +175,52 @@ export default function QuizzesTab() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ featured: !quiz.featured }),
-      })
+      });
       if (!res.ok) {
-        throw new Error("Erreur lors de la mise à jour du quiz")
+        throw new Error("Erreur lors de la mise à jour du quiz");
       }
-      return res.json()
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] });
       toast({
         title: 'Quiz mis à jour',
         description: 'Le statut du quiz a été mis à jour.',
-      })
+      });
     },
     onError: () => {
       toast({
         title: 'Erreur',
         description: 'Impossible de mettre à jour le quiz.',
         variant: 'destructive',
-      })
+      });
     },
-  })
+  });
 
   const handleAddQuiz = () => {
-    addQuizMutation.mutate(newQuiz)
-  }
+    addQuizMutation.mutate(newQuiz);
+  };
 
   const handleDeleteQuiz = (quizId: string) => {
-    setQuizIdToDelete(quizId)
-    setIsDeleteDialogOpen(true)
-  }
+    setQuizIdToDelete(quizId);
+    setIsDeleteDialogOpen(true);
+  };
 
   if (isLoading) {
-    return <div>Chargement...</div>
+    return <div>Chargement...</div>;
   }
 
   if (error) {
-    return <div>Erreur lors du chargement des quiz</div>
+    return <div>Erreur lors du chargement des quiz</div>;
   }
 
   const filteredQuizzes = quizzes?.filter(
     (quiz) =>
       quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      categories?.find((cat) => cat._id === quiz.category)?.name
+      subjects?.find((subj) => subj._id === quiz.subject)?.name
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase())
-  )
+  );
 
   return (
     <Card>
@@ -251,7 +251,7 @@ export default function QuizzesTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Titre</TableHead>
-                <TableHead>Catégorie</TableHead>
+                <TableHead>Sujet</TableHead>
                 <TableHead>Difficulté</TableHead>
                 <TableHead>Questions</TableHead>
                 <TableHead>En Vedette</TableHead>
@@ -263,7 +263,7 @@ export default function QuizzesTab() {
                 <TableRow key={quiz._id}>
                   <TableCell>{quiz.title}</TableCell>
                   <TableCell>
-                    {categories?.find((cat) => cat._id === quiz.category)?.name}
+                    {subjects?.find((subj) => subj._id === quiz.subject)?.name}
                   </TableCell>
                   <TableCell>{quiz.difficulty}</TableCell>
                   <TableCell>{quiz.questionsCount}</TableCell>
@@ -352,22 +352,22 @@ export default function QuizzesTab() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="quiz-category" className="text-right">
-                  Catégorie
+                <Label htmlFor="quiz-subject" className="text-right">
+                  Sujet
                 </Label>
                 <Select
-                  value={newQuiz.category}
+                  value={newQuiz.subject}
                   onValueChange={(value) =>
-                    setNewQuiz({ ...newQuiz, category: value })
+                    setNewQuiz({ ...newQuiz, subject: value })
                   }
                 >
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Sélectionnez une catégorie" />
+                    <SelectValue placeholder="Sélectionnez un sujet" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories?.map((category) => (
-                      <SelectItem key={category._id} value={category._id}>
-                        {category.name}
+                    {subjects?.map((subject) => (
+                      <SelectItem key={subject._id} value={subject._id}>
+                        {subject.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -416,7 +416,7 @@ export default function QuizzesTab() {
                 variant="destructive"
                 onClick={() => {
                   if (quizIdToDelete) {
-                    deleteQuizMutation.mutate(quizIdToDelete)
+                    deleteQuizMutation.mutate(quizIdToDelete);
                   }
                 }}
               >
@@ -433,5 +433,5 @@ export default function QuizzesTab() {
         </Dialog>
       </CardContent>
     </Card>
-  )
+  );
 }

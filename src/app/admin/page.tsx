@@ -10,6 +10,7 @@ import QuizzesTab from './QuizzesTab'
 import StatsTab from './StatsTab'
 import SettingsTab from './SettingsTab'
 import RequestsTab from './RequestsTab' // Import du nouveau composant
+import SubjectsTab from './SubjectsTab'
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users')
@@ -28,6 +29,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="categories" className="text-xs sm:text-sm">
               Catégories
+            </TabsTrigger>
+            <TabsTrigger value="subjects" className="text-xs sm:text-sm">
+              Sujets
             </TabsTrigger>
             <TabsTrigger value="quizzes" className="text-xs sm:text-sm">
               Quiz
@@ -50,6 +54,9 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="categories">
             <CategoriesTab />
+          </TabsContent>
+          <TabsContent value="subjects">
+            <SubjectsTab />
           </TabsContent>
           <TabsContent value="quizzes">
             <QuizzesTab />

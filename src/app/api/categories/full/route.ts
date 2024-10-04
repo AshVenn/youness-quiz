@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       })
       .lean();
 
+
     return NextResponse.json(categories);
   } catch (error) {
     console.error('Erreur lors de la récupération des catégories :', error);
