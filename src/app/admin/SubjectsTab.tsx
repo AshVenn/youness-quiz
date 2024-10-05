@@ -256,11 +256,12 @@ export default function SubjectsTab() {
     if (editSubjectId) {
       const updatedSubject = {
         name: editSubjectName,
-        categoryId: editSelectedCategoryId || undefined,
+        category: editSelectedCategoryId || undefined,
       };
       updateSubjectMutation.mutate({ subjectId: editSubjectId, updatedSubject });
     }
   };
+  
 
   if (isLoading) {
     return <div>Chargement...</div>;

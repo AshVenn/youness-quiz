@@ -104,6 +104,12 @@ export async function POST(request: NextRequest) {
 
     await newQuiz.save();
 
+    // Add the quiz ID to the subject's quizzes array
+    await Subject.findByIdAndUpdate(subjectId, {
+      $push: { quizzes: newQuiz._id }
+    });
+
+    // Update the remaining attempts for the user
     user.remainingAttempts -= 1;
     await user.save();
 

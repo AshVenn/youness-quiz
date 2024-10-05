@@ -63,8 +63,10 @@ const attemptSchema = new mongoose.Schema({
 const subjectSchema = new mongoose.Schema({
   name: { type: String, required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category'},
   createdAt: { type: Date, default: Date.now },
   featured: { type: Boolean, default: false },
+  quizzes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Quiz' }],
 });
 
 // Settings Schema

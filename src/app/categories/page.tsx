@@ -58,6 +58,7 @@ export default function CategoriesPage() {
     fetch('/api/categories/full')
       .then((res) => res.json())
       .then((data) => {
+        console.log(data)
         setOriginalCategories(data);
         setCategories(data);
       })
@@ -138,7 +139,7 @@ export default function CategoriesPage() {
             >
               <Card>
                 <CardHeader className="cursor-pointer" onClick={() => toggleCategory(category._id)}>
-                  <CardTitle className="flex items-center justify-between">
+                  <CardTitle className="text-4xl flex items-center justify-between">
                     {category.name}
                     {expandedCategories.includes(category._id) ? (
                       <ChevronDown className="h-5 w-5" />
@@ -177,49 +178,54 @@ export default function CategoriesPage() {
                                   exit={{ opacity: 0, height: 0 }}
                                   transition={{ duration: 0.3 }}
                                 >
-                                  {subject.quizzes.map(quiz => (
-                                    <Link href={`/quiz/${quiz._id}`} key={quiz._id}>
-                                      <Card className="mb-2 hover:bg-gray-100 transition-colors">
-                                        <CardContent className="p-4">
-                                          <div className="flex items-center justify-between">
-                                            <div>
-                                              <h4 className="font-medium">{quiz.title}</h4>
-                                              <p className="text-sm text-gray-500">par {quiz.createdBy.username}</p>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              <Badge variant={
-                                                quiz.difficulty === 'easy' ? 'secondary' :
-                                                quiz.difficulty === 'medium' ? 'default' :
-                                                'destructive'
-                                              }>
-                                                {quiz.difficulty}
-                                              </Badge>
-                                              {quiz.featured && (
-                                                <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
-                                              )}
-                                            </div>
-                                          </div>
-                                          <div className="mt-2 flex items-center">
-                                            <div className="flex items-center">
-                                              {[...Array(5)].map((_, i) => (
-                                                <Star
-                                                  key={i}
-                                                  className={`h-4 w-4 ${
-                                                    i < Math.round(quiz.averageRating)
-                                                      ? 'text-yellow-400 fill-current'
-                                                      : 'text-gray-300'
-                                                  }`}
-                                                />
-                                              ))}
-                                            </div>
-                                            <span className="ml-2 text-sm text-gray-600">
-                                              {quiz.averageRating.toFixed(1)} ({quiz.ratingCount} avis)
-                                            </span>
-                                          </div>
-                                        </CardContent>
-                                      </Card>
-                                    </Link>
+                      {(subject.quizzes || []).map(quiz => (
+                        <Link href={`/quiz/${quiz._id}`} key={quiz._id}>
+                          <Card className="mb-2 hover:bg-gray-100 transition-colors">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium">{quiz.title}</h4>
+                                  <p className="text-sm text-gray-500">par {quiz.createdBy.username}</p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Badge
+                                    variant={
+                                      quiz.difficulty === 'easy'
+                                        ? 'secondary'
+                                        : quiz.difficulty === 'medium'
+                                        ? 'default'
+                                        : 'destructive'
+                                    }
+                                  >
+                                    {quiz.difficulty}
+                                  </Badge>
+                                  {quiz.featured && (
+                                    <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
+                                  )}
+                                </div>
+                              </div>
+                              <div className="mt-2 flex items-center">
+                                <div className="flex items-center">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-4 w-4 ${
+                                        i < Math.round(quiz.averageRating)
+                                          ? 'text-yellow-400 fill-current'
+                                          : 'text-gray-300'
+                                      }`}
+                                    />
                                   ))}
+                                </div>
+                                <span className="ml-2 text-sm text-gray-600">
+                                  {quiz.averageRating.toFixed(1)} ({quiz.ratingCount} avis)
+                                </span>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
+
                                 </motion.div>
                               )}
                             </AnimatePresence>

@@ -25,32 +25,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const prompt=body.prompt;
-    const title = body.title;
-    const difficulty = body.difficulty;
-    const subject = body.subject;
-    const numberOfQuestions = body.questionsCount;
-    const featured = body.featured;
-    const timerEnabled = body.timerEnabled ?? false;
-    const timerDuration = body.timerDuration ?? 0;
-    
+    const { prompt, title, difficulty, subject, questionsCount: numberOfQuestions, featured, timerEnabled, timerDuration } = body;
 
-
-    console.log(body)
-    if (
-      !prompt ||
-      typeof prompt !== 'string' ||
-      !difficulty ||
-      !subject ||
-      !numberOfQuestions
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            'Le prompt, la difficulté, le sujet ou le nombre de questions sont manquants ou invalides.',
-        },
-        { status: 400 }
-      );
+    if (!prompt || typeof prompt !== 'string' || !difficulty || !subject || !numberOfQuestions) {
+      return NextResponse.json({
+        message: 'Le prompt, la difficulté, le sujet ou le nombre de questions sont manquants ou invalides.',
+      }, { status: 400 });
     }
 
     const token = await getToken({
@@ -59,13 +39,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!token || token.role !== 'admin') {
-      return NextResponse.json(
-        {
-          message:
-            "Non autorisé. Veuillez vous connecter en tant qu'administrateur.",
-        },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        message: "Non autorisé. Veuillez vous connecter en tant qu'administrateur.",
+      }, { status: 401 });
     }
 
     const userId = token.id;
@@ -77,18 +53,12 @@ export async function POST(request: NextRequest) {
 
     // Vérifier si le sujet existe
     if (!mongoose.Types.ObjectId.isValid(subject)) {
-      return NextResponse.json(
-        { message: 'Le sujet sélectionné est invalide.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Le sujet sélectionné est invalide.' }, { status: 400 });
     }
 
     const existingSubject = await Subject.findById(subject);
     if (!existingSubject) {
-      return NextResponse.json(
-        { message: 'Le sujet sélectionné est invalide.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Le sujet sélectionné est invalide.' }, { status: 400 });
     }
 
     const formattedPrompt = `
@@ -110,10 +80,7 @@ export async function POST(request: NextRequest) {
     const generatedText = await response.text();
 
     if (!generatedText) {
-      return NextResponse.json(
-        { message: 'Erreur lors de la génération des questions.' },
-        { status: 500 }
-      );
+      return NextResponse.json({ message: 'Erreur lors de la génération des questions.' }, { status: 500 });
     }
 
     const cleanGeneratedText = (text: string): string => {
@@ -126,20 +93,11 @@ export async function POST(request: NextRequest) {
       generatedQuestions = JSON.parse(cleanedText);
     } catch (error) {
       console.error('Erreur de parsing :', error);
-      return NextResponse.json(
-        { message: 'Erreur lors du parsing des questions générées.' },
-        { status: 500 }
-      );
+      return NextResponse.json({ message: 'Erreur lors du parsing des questions générées.' }, { status: 500 });
     }
 
-    if (
-      !Array.isArray(generatedQuestions) ||
-      generatedQuestions.length !== numberOfQuestions
-    ) {
-      return NextResponse.json(
-        { message: 'Erreur lors de la génération des questions.' },
-        { status: 500 }
-      );
+    if (!Array.isArray(generatedQuestions) || generatedQuestions.length !== numberOfQuestions) {
+      return NextResponse.json({ message: 'Erreur lors de la génération des questions.' }, { status: 500 });
     }
 
     const newQuiz = new Quiz({
@@ -148,7 +106,7 @@ export async function POST(request: NextRequest) {
       questions: generatedQuestions,
       createdBy: user._id,
       difficulty,
-      subject, 
+      subject,
       timerEnabled,
       timerDuration: timerEnabled ? timerDuration : undefined,
       featured: featured || false,
@@ -156,12 +114,14 @@ export async function POST(request: NextRequest) {
 
     await newQuiz.save();
 
+    // Add the quiz ID to the subject's quizzes array
+    await Subject.findByIdAndUpdate(subject, {
+      $push: { quizzes: newQuiz._id }
+    });
+
     return NextResponse.json({ quizId: newQuiz._id }, { status: 200 });
   } catch (error) {
     console.error('Erreur lors de la requête :', error);
-    return NextResponse.json(
-      { message: 'Erreur lors de la génération du quiz.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Erreur lors de la génération du quiz.' }, { status: 500 });
   }
 }

@@ -1,10 +1,8 @@
-// QuizzesTab.tsx
-
 'use client';
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlusCircle, Search, Edit, Trash } from 'lucide-react';
+import { PlusCircle, Search, Edit, Trash, Loader2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -76,7 +74,7 @@ export default function QuizzesTab() {
   // Récupération des quiz
   const {
     data: quizzes,
-    isLoading,
+    isLoading: isLoadingQuizzes,
     error,
   } = useQuery<Quiz[]>({
     queryKey: ['admin-quizzes'],
@@ -101,8 +99,12 @@ export default function QuizzesTab() {
     },
   });
 
-  // Mutation pour ajouter un quiz
-  const addQuizMutation = useMutation({
+  // Mutation pour ajouter un quiz avec l'état de chargement
+  const { mutate: addQuiz, isLoading: isAddingQuiz } = useMutation<
+    Quiz,
+    Error,
+    Partial<Quiz>
+  >({
     mutationFn: async (newQuiz: Partial<Quiz>) => {
       const res = await fetch('/api/admin/quizzes', {
         method: 'POST',
@@ -140,7 +142,7 @@ export default function QuizzesTab() {
   });
 
   // Mutation pour supprimer un quiz
-  const deleteQuizMutation = useMutation({
+  const { mutate: deleteQuiz } = useMutation<void, Error, string>({
     mutationFn: async (quizId: string) => {
       const res = await fetch(`/api/admin/quizzes/${quizId}`, {
         method: 'DELETE',
@@ -169,7 +171,7 @@ export default function QuizzesTab() {
   });
 
   // Mutation pour mettre à jour le statut en vedette d'un quiz
-  const toggleFeaturedMutation = useMutation({
+  const { mutate: toggleFeatured } = useMutation<Quiz, Error, Quiz>({
     mutationFn: async (quiz: Quiz) => {
       const res = await fetch(`/api/admin/quizzes/${quiz._id}`, {
         method: 'PUT',
@@ -198,7 +200,7 @@ export default function QuizzesTab() {
   });
 
   const handleAddQuiz = () => {
-    addQuizMutation.mutate(newQuiz);
+    addQuiz(newQuiz);
   };
 
   const handleDeleteQuiz = (quizId: string) => {
@@ -206,7 +208,7 @@ export default function QuizzesTab() {
     setIsDeleteDialogOpen(true);
   };
 
-  if (isLoading) {
+  if (isLoadingQuizzes) {
     return <div>Chargement...</div>;
   }
 
@@ -217,8 +219,9 @@ export default function QuizzesTab() {
   const filteredQuizzes = quizzes?.filter(
     (quiz) =>
       quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      subjects?.find((subj) => subj._id === quiz.subject)?.name
-        ?.toLowerCase()
+      subjects
+        ?.find((subj) => subj._id === quiz.subject)
+        ?.name?.toLowerCase()
         .includes(searchTerm.toLowerCase())
   );
 
@@ -270,7 +273,7 @@ export default function QuizzesTab() {
                   <TableCell>
                     <Switch
                       checked={quiz.featured}
-                      onCheckedChange={() => toggleFeaturedMutation.mutate(quiz)}
+                      onCheckedChange={() => toggleFeatured(quiz)}
                     />
                   </TableCell>
                   <TableCell>
@@ -395,15 +398,27 @@ export default function QuizzesTab() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" onClick={handleAddQuiz}>
-                Créer le Quiz
+              <Button
+                type="submit"
+                onClick={handleAddQuiz}
+                disabled={isAddingQuiz}
+              >
+                {isAddingQuiz ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                )}
+                {isAddingQuiz ? 'Création en cours...' : 'Créer le Quiz'}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* Dialog pour confirmer la suppression */}
-        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <Dialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirmer la suppression</DialogTitle>
@@ -416,7 +431,7 @@ export default function QuizzesTab() {
                 variant="destructive"
                 onClick={() => {
                   if (quizIdToDelete) {
-                    deleteQuizMutation.mutate(quizIdToDelete);
+                    deleteQuiz(quizIdToDelete);
                   }
                 }}
               >

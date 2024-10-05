@@ -9,19 +9,21 @@ export async function GET(request: NextRequest) {
 
   try {
     const categories = await Category.find()
-      .populate({
-        path: 'subjects',
+    .populate({
+      path: 'subjects',
+      populate: {
+        path: 'quizzes', // Temporarily remove match filter
+        select: '_id title createdBy difficulty featured averageRating ratingCount',
         populate: {
-          path: 'quizzes',
-          match: { public: true },
-          select: '_id title createdBy difficulty featured averageRating ratingCount',
-          populate: {
-            path: 'createdBy',
-            select: 'username',
-          },
+          path: 'createdBy',
+          select: 'username',
         },
-      })
-      .lean();
+      },
+    })
+    .lean();
+  
+    console.log(categories)
+  
 
 
     return NextResponse.json(categories);

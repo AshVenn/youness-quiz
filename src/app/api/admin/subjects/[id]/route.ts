@@ -25,13 +25,22 @@ export async function PUT(request: NextRequest, { params }: Params) {
   await dbConnect();
   try {
     const data = await request.json();
+
+    
+    if (data.category === undefined) {
+      delete data.category; 
+    }
+
     const subject = await Subject.findByIdAndUpdate(params.id, data, { new: true });
     if (!subject) return NextResponse.json({ error: 'Subject not found' }, { status: 404 });
+
     return NextResponse.json(subject);
   } catch (error) {
-    return NextResponse.error();
+    console.error('Error updating subject:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   await dbConnect();
