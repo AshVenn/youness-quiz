@@ -28,6 +28,7 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import SmartQ from './SmartQ';
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -43,8 +44,12 @@ export default function Navbar() {
     <header className="w-full p-4 bg-white/80 dark:bg-gray-800 dark:backdrop-blur-sm shadow-sm fixed top-0 z-50">
       <div className="max-w-screen-xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-primary dark:text-white flex items-center">
-          SmartQ
-          <Badge className="ml-2">Beta</Badge> {/* Add Badge for SmartQ */}
+        <SmartQ 
+          className="w-[150px] h-[30px] sm:w-[200px] sm:h-[40px] md:w-[250px] md:h-[50px] lg:w-[300px] lg:h-[60px]"
+        />
+
+
+          <Badge>Beta</Badge> {/* Add Badge for SmartQ */}
         </Link>
         <div className="md:hidden flex items-center">
           <Button variant="ghost" size="icon" onClick={toggleDarkMode} className="mr-2">
