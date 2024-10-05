@@ -40,7 +40,7 @@ export default function About() {
       variants={containerVariants}
     >
       <motion.h1 
-        className="text-4xl md:text-6xl font-bold text-center mb-12"
+        className="mt-12 text-4xl md:text-6xl font-bold text-center mb-12"
         variants={itemVariants}
       >
         À Propos de SmartQ

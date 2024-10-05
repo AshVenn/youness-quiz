@@ -165,7 +165,7 @@ export default function Login() {
             </div>
             <Link
               aria-label="Réinitialiser le mot de passe"
-              href="/reset-password"
+              href="/resetPassword"
               className="text-sm text-primary underline-offset-4 transition-colors hover:underline"
             >
               Mot de passe oublié ?

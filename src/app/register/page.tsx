@@ -1,3 +1,4 @@
+// app/register/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/card';
 import { Icons } from '@/components/ui/icons';
 import { useToast } from '@/hooks/use-toast';
-import { signIn } from 'next-auth/react'; // Import signIn from next-auth
+import { signIn } from 'next-auth/react';
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -53,7 +54,7 @@ export default function Register() {
         description: 'Votre compte a été créé avec succès.',
         variant: 'default',
       });
-      router.push('/login'); // Redirect to login page after successful registration
+      router.push('/login');
     } else {
       toast({
         title: "Erreur lors de l'inscription",
@@ -88,6 +89,37 @@ export default function Register() {
           <CardContent className="grid gap-4">
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid gap-2">
+                {/* First Name */}
+                <div className="grid gap-1">
+                  <Label htmlFor="firstName">Prénom</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="Votre prénom"
+                    {...register('firstName')}
+                  />
+                  {errors.firstName && (
+                    <p className="text-sm text-red-500">
+                      {errors.firstName.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Last Name */}
+                <div className="grid gap-1">
+                  <Label htmlFor="lastName">Nom de famille</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Votre nom de famille"
+                    {...register('lastName')}
+                  />
+                  {errors.lastName && (
+                    <p className="text-sm text-red-500">
+                      {errors.lastName.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Username */}
                 <div className="grid gap-1">
                   <Label htmlFor="username">Nom d'utilisateur</Label>
                   <Input
@@ -99,9 +131,13 @@ export default function Register() {
                     {...register('username')}
                   />
                   {errors.username && (
-                    <p className="text-sm text-red-500">{errors.username.message}</p>
+                    <p className="text-sm text-red-500">
+                      {errors.username.message}
+                    </p>
                   )}
                 </div>
+
+                {/* Email */}
                 <div className="grid gap-1">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -114,9 +150,13 @@ export default function Register() {
                     {...register('email')}
                   />
                   {errors.email && (
-                    <p className="text-sm text-red-500">{errors.email.message}</p>
+                    <p className="text-sm text-red-500">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
+
+                {/* Password */}
                 <div className="grid gap-1">
                   <Label htmlFor="password">Mot de passe</Label>
                   <Input
@@ -129,9 +169,12 @@ export default function Register() {
                     {...register('password')}
                   />
                   {errors.password && (
-                    <p className="text-sm text-red-500">{errors.password.message}</p>
+                    <p className="text-sm text-red-500">
+                      {errors.password.message}
+                    </p>
                   )}
                 </div>
+
                 <Button disabled={isLoading} className="mt-2" type="submit">
                   {isLoading && (
                     <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />

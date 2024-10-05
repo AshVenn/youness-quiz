@@ -116,7 +116,7 @@ export default function CategoriesPage() {
   )
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 mt-12">
       <h1 className="text-4xl font-bold mb-8 text-center">Catégories</h1>
       <div className="mb-8">
         <Input
@@ -139,7 +139,7 @@ export default function CategoriesPage() {
             >
               <Card>
                 <CardHeader className="cursor-pointer" onClick={() => toggleCategory(category._id)}>
-                  <CardTitle className="text-4xl flex items-center justify-between">
+                  <CardTitle className="text-3xl flex items-center justify-between">
                     {category.name}
                     {expandedCategories.includes(category._id) ? (
                       <ChevronDown className="h-5 w-5" />
@@ -160,7 +160,7 @@ export default function CategoriesPage() {
                         {category.subjects.map(subject => (
                           <div key={subject._id} className="mb-4">
                             <h3 
-                              className="text-lg font-semibold mb-2 cursor-pointer flex items-center"
+                              className="text-2xl font-semibold mb-2 cursor-pointer flex items-center"
                               onClick={() => toggleSubject(subject._id)}
                             >
                               {subject.name}
