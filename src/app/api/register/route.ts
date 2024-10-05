@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
     );
 
     // Connect to the database
+
+    
     await dbConnect();
 
     // Check if the user already exists

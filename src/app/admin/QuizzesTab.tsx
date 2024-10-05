@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PlusCircle, Search, Edit, Trash, Loader2 } from 'lucide-react';
 import {
   Card,
@@ -48,11 +48,11 @@ type Subject = {
 type Quiz = {
   _id: string;
   title: string;
-  subject: string; // ID du sujet
+  subject: string;
   difficulty: string;
   prompt: string;
   questionsCount: number;
-  featured: boolean; // Champ pour indiquer si le quiz est en vedette
+  featured: boolean;
 };
 
 export default function QuizzesTab() {
@@ -68,6 +68,8 @@ export default function QuizzesTab() {
   });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [quizIdToDelete, setQuizIdToDelete] = useState<string | null>(null);
+  const [isAddingQuiz, setIsAddingQuiz] = useState(false);
+  const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -99,24 +101,21 @@ export default function QuizzesTab() {
     },
   });
 
-  // Mutation pour ajouter un quiz avec l'état de chargement
-  const { mutate: addQuiz, isLoading: isAddingQuiz } = useMutation<
-    Quiz,
-    Error,
-    Partial<Quiz>
-  >({
-    mutationFn: async (newQuiz: Partial<Quiz>) => {
+  // Fonction pour ajouter un quiz
+  const handleAddQuiz = async () => {
+    setIsAddingQuiz(true);
+    try {
       const res = await fetch('/api/admin/quizzes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newQuiz),
       });
+
       if (!res.ok) {
         throw new Error("Erreur lors de l'ajout du quiz");
       }
-      return res.json();
-    },
-    onSuccess: () => {
+
+      await res.json();
       queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] });
       setIsAddQuizDialogOpen(false);
       setNewQuiz({
@@ -131,28 +130,31 @@ export default function QuizzesTab() {
         title: 'Quiz ajouté',
         description: 'Le quiz a été ajouté avec succès.',
       });
-    },
-    onError: () => {
+    } catch (error) {
       toast({
         title: 'Erreur',
         description: "Impossible d'ajouter le quiz.",
         variant: 'destructive',
       });
-    },
-  });
+    } finally {
+      setIsAddingQuiz(false);
+    }
+  };
 
-  // Mutation pour supprimer un quiz
-  const { mutate: deleteQuiz } = useMutation<void, Error, string>({
-    mutationFn: async (quizId: string) => {
-      const res = await fetch(`/api/admin/quizzes/${quizId}`, {
+  // Fonction pour supprimer un quiz
+  const handleDeleteQuiz = async () => {
+    if (!quizIdToDelete) return;
+    setIsDeletingQuiz(true);
+    try {
+      const res = await fetch(`/api/admin/quizzes/${quizIdToDelete}`, {
         method: 'DELETE',
       });
+
       if (!res.ok) {
         throw new Error('Erreur lors de la suppression du quiz');
       }
-      return res.json();
-    },
-    onSuccess: () => {
+
+      await res.json();
       queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] });
       setIsDeleteDialogOpen(false);
       setQuizIdToDelete(null);
@@ -160,19 +162,20 @@ export default function QuizzesTab() {
         title: 'Quiz supprimé',
         description: 'Le quiz a été supprimé avec succès.',
       });
-    },
-    onError: () => {
+    } catch (error) {
       toast({
         title: 'Erreur',
         description: 'Impossible de supprimer le quiz.',
         variant: 'destructive',
       });
-    },
-  });
+    } finally {
+      setIsDeletingQuiz(false);
+    }
+  };
 
-  // Mutation pour mettre à jour le statut en vedette d'un quiz
-  const { mutate: toggleFeatured } = useMutation<Quiz, Error, Quiz>({
-    mutationFn: async (quiz: Quiz) => {
+  // Fonction pour mettre à jour le statut en vedette d'un quiz
+  const toggleFeatured = async (quiz: Quiz) => {
+    try {
       const res = await fetch(`/api/admin/quizzes/${quiz._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -181,31 +184,19 @@ export default function QuizzesTab() {
       if (!res.ok) {
         throw new Error("Erreur lors de la mise à jour du quiz");
       }
-      return res.json();
-    },
-    onSuccess: () => {
+      await res.json();
       queryClient.invalidateQueries({ queryKey: ['admin-quizzes'] });
       toast({
         title: 'Quiz mis à jour',
         description: 'Le statut du quiz a été mis à jour.',
       });
-    },
-    onError: () => {
+    } catch (error) {
       toast({
         title: 'Erreur',
         description: 'Impossible de mettre à jour le quiz.',
         variant: 'destructive',
       });
-    },
-  });
-
-  const handleAddQuiz = () => {
-    addQuiz(newQuiz);
-  };
-
-  const handleDeleteQuiz = (quizId: string) => {
-    setQuizIdToDelete(quizId);
-    setIsDeleteDialogOpen(true);
+    }
   };
 
   if (isLoadingQuizzes) {
@@ -284,7 +275,10 @@ export default function QuizzesTab() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleDeleteQuiz(quiz._id)}
+                        onClick={() => {
+                          setQuizIdToDelete(quiz._id);
+                          setIsDeleteDialogOpen(true);
+                        }}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -415,10 +409,7 @@ export default function QuizzesTab() {
         </Dialog>
 
         {/* Dialog pour confirmer la suppression */}
-        <Dialog
-          open={isDeleteDialogOpen}
-          onOpenChange={setIsDeleteDialogOpen}
-        >
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirmer la suppression</DialogTitle>
@@ -431,11 +422,16 @@ export default function QuizzesTab() {
                 variant="destructive"
                 onClick={() => {
                   if (quizIdToDelete) {
-                    deleteQuiz(quizIdToDelete);
+                    handleDeleteQuiz();
                   }
                 }}
+                disabled={isDeletingQuiz}
               >
-                Supprimer
+                {isDeletingQuiz ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  'Supprimer'
+                )}
               </Button>
               <Button
                 variant="outline"

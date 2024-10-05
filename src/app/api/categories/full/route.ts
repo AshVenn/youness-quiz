@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
     })
     .lean();
   
-    console.log(categories)
   
 
 
