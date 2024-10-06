@@ -61,102 +61,104 @@ export default function PopularQuizzesPage() {
   }, [currentPage])
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-8">Chargement...</div>
+    return <div className="min-h-screen bg-background text-foreground flex items-center justify-center">Chargement...</div>
   }
 
   if (error) {
-    return <div className="container mx-auto px-4 py-8">{error}</div>
+    return <div className="min-h-screen bg-background text-foreground flex items-center justify-center">{error}</div>
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8 text-center">Quiz Populaires</h1>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {quizzes.map((quiz, index) => (
-          <motion.div
-            key={quiz._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <Link href={`/quiz/${quiz._id}`}>
-              <Card className="h-full hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="truncate">{quiz.title}</span>
-                    {quiz.featured && (
-                      <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500 mb-4">par {quiz.createdBy.username}</p>
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge variant={
-                      quiz.difficulty === 'easy' ? 'secondary' :
-                      quiz.difficulty === 'medium' ? 'default' :
-                      'destructive'
-                    }>
-                      {quiz.difficulty}
-                    </Badge>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Users className="h-4 w-4 mr-1" />
-                      {quiz.attemptCount} tentatives
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto px-4 py- mt-16">
+        <h1 className="text-4xl font-bold mb-8 text-center">Quiz Populaires</h1>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {quizzes.map((quiz, index) => (
+            <motion.div
+              key={quiz._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+            >
+              <Link href={`/quiz/${quiz._id}`}>
+                <Card className="h-full hover:shadow-lg transition-shadow bg-card text-card-foreground">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="truncate">{quiz.title}</span>
+                      {quiz.featured && (
+                        <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">par {quiz.createdBy.username}</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant={
+                        quiz.difficulty === 'easy' ? 'secondary' :
+                        quiz.difficulty === 'medium' ? 'default' :
+                        'destructive'
+                      }>
+                        {quiz.difficulty}
+                      </Badge>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Users className="h-4 w-4 mr-1" />
+                        {quiz.attemptCount} tentatives
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.round(quiz.averageRating)
-                              ? 'text-yellow-400 fill-current'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < Math.round(quiz.averageRating)
+                                ? 'text-yellow-400 fill-current'
+                                : 'text-muted-foreground'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {quiz.averageRating.toFixed(1)} ({quiz.ratingCount} avis)
+                      </span>
                     </div>
-                    <span className="text-sm text-gray-600">
-                      {quiz.averageRating.toFixed(1)} ({quiz.ratingCount} avis)
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
-      <div className="mt-8">
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                href="#" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-              />
-            </PaginationItem>
-            {[...Array(totalPages)].map((_, i) => (
-              <PaginationItem key={i}>
-                <PaginationLink 
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+        <div className="mt-8">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
                   href="#" 
-                  onClick={() => setCurrentPage(i + 1)}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                />
               </PaginationItem>
-            ))}
-            <PaginationItem>
-              <PaginationNext 
-                href="#" 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={() => setCurrentPage(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </div>
     </div>
   )

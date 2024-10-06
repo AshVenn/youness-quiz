@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession} from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -9,7 +9,6 @@ import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { BackgroundBeamsWithCollision } from '@/components/ui/background-beams-with-collision';
-import { BackgroundLines } from '@/components/ui/background-lines';
 import { useRouter } from 'next/navigation';
 import SmartQAnimated from '@/components/SmartQAnimated';
 
@@ -91,21 +90,19 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-
-        <BackgroundBeamsWithCollision>
-        <main className="flex-grow flex flex-col justify-center items-center p-0 mt-0">
-        <BackgroundLines className="flex items-center justify-center w-full flex-col px-4">
-        <SmartQAnimated 
+    <div className="flex flex-col min-h-screen bg-background">
+      <BackgroundBeamsWithCollision>
+        <main className="flex-grow flex flex-col justify-center items-center p-4 relative z-10">
+          <SmartQAnimated 
             width={500} 
             height={500} 
-            className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] mb-4 -mt-24 sm:-mt-32 md:-mt-40 lg:-mt-48" 
+            className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] mb-8" 
           />
 
-          <p className="max-w-xl mx-auto text-sm md:text-lg text-neutral-700 dark:text-neutral-400 text-center mb-8">
+          <p className="max-w-xl mx-auto text-sm md:text-lg text-foreground text-center mb-8">
             Générez des quiz intelligents sur n'importe quel sujet, instantanément.
           </p>
-          <Card className="w-full max-w-md backdrop-blur-sm shadow-lg mx-auto">
+          <Card className="w-full max-w-md backdrop-blur-sm bg-background/80 shadow-lg mx-auto border-primary/20">
             <CardContent className="p-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -117,19 +114,19 @@ export default function LandingPage() {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Saisissez votre sujet ici"
-                  className="mb-4"
+                  className="mb-4 bg-background text-foreground border-input placeholder-muted-foreground"
                   disabled={!session || (remainingAttempts !== null && remainingAttempts <= 0)}
                 />
                 <Button
                   onClick={handleSubmit}
                   disabled={isLoading || !prompt || !session || (remainingAttempts !== null && remainingAttempts <= 0)}
-                  className="w-full bg-gradient-to-r from-purple-500 via-violet-500 to-pink-500 hover:from-purple-600 hover:via-violet-600 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 px-4 rounded-full transition-all duration-300 transform hover:scale-105"
                 >
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Générer le Quiz'}
                 </Button>
                 {session && remainingAttempts !== null && (
                   <motion.p
-                    className="mt-2 text-center text-sm text-gray-600"
+                    className="mt-2 text-center text-sm text-muted-foreground"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.6, duration: 0.5 }}
@@ -140,9 +137,7 @@ export default function LandingPage() {
               </motion.div>
             </CardContent>
           </Card>
-        </BackgroundLines>
-      </main>
-
+        </main>
       </BackgroundBeamsWithCollision>
     </div>
   )

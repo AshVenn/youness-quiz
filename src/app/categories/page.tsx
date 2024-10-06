@@ -54,7 +54,6 @@ export default function CategoriesPage() {
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    // Récupérer les catégories depuis l'API
     fetch('/api/categories/full')
       .then((res) => res.json())
       .then((data) => {
@@ -116,160 +115,161 @@ export default function CategoriesPage() {
   )
 
   return (
-    <div className="container mx-auto px-4 py-8 mt-12">
-      <h1 className="text-4xl font-bold mb-8 text-center">Catégories</h1>
-      <div className="mb-8">
-        <Input
-          type="text"
-          placeholder="Rechercher des catégories, sujets ou quiz..."
-          value={searchTerm}
-          onChange={handleSearch}
-          className="w-full max-w-md mx-auto"
-        />
-      </div>
-      <motion.div layout className="space-y-6">
-        <AnimatePresence>
-          {paginatedCategories.map(category => (
-            <motion.div
-              key={category._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card>
-                <CardHeader className="cursor-pointer" onClick={() => toggleCategory(category._id)}>
-                  <CardTitle className="text-3xl flex items-center justify-between">
-                    {category.name}
-                    {expandedCategories.includes(category._id) ? (
-                      <ChevronDown className="h-5 w-5" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5" />
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <AnimatePresence>
-                  {expandedCategories.includes(category._id) && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <CardContent className="pt-0">
-                        {category.subjects.map(subject => (
-                          <div key={subject._id} className="mb-4">
-                            <h3 
-                              className="text-2xl font-semibold mb-2 cursor-pointer flex items-center"
-                              onClick={() => toggleSubject(subject._id)}
-                            >
-                              {subject.name}
-                              {expandedSubjects.includes(subject._id) ? (
-                                <ChevronDown className="h-4 w-4 ml-2" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 ml-2" />
-                              )}
-                            </h3>
-                            <AnimatePresence>
-                              {expandedSubjects.includes(subject._id) && (
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.3 }}
-                                >
-                      {(subject.quizzes || []).map(quiz => (
-                        <Link href={`/quiz/${quiz._id}`} key={quiz._id}>
-                          <Card className="mb-2 hover:bg-gray-100 transition-colors">
-                            <CardContent className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h4 className="font-medium">{quiz.title}</h4>
-                                  <p className="text-sm text-gray-500">par {quiz.createdBy.username}</p>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Badge
-                                    variant={
-                                      quiz.difficulty === 'easy'
-                                        ? 'secondary'
-                                        : quiz.difficulty === 'medium'
-                                        ? 'default'
-                                        : 'destructive'
-                                    }
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto px-4 py-8 mt-16">
+        <h1 className="text-4xl font-bold mb-8 text-center">Catégories</h1>
+        <div className="mb-8">
+          <Input
+            type="text"
+            placeholder="Rechercher des catégories, sujets ou quiz..."
+            value={searchTerm}
+            onChange={handleSearch}
+            className="w-full max-w-md mx-auto"
+          />
+        </div>
+        <motion.div layout className="space-y-6">
+          <AnimatePresence>
+            {paginatedCategories.map(category => (
+              <motion.div
+                key={category._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="bg-card text-card-foreground">
+                  <CardHeader className="cursor-pointer" onClick={() => toggleCategory(category._id)}>
+                    <CardTitle className="text-3xl flex items-center justify-between">
+                      {category.name}
+                      {expandedCategories.includes(category._id) ? (
+                        <ChevronDown className="h-5 w-5" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5" />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <AnimatePresence>
+                    {expandedCategories.includes(category._id) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <CardContent className="pt-0">
+                          {category.subjects.map(subject => (
+                            <div key={subject._id} className="mb-4">
+                              <h3 
+                                className="text-2xl font-semibold mb-2 cursor-pointer flex items-center"
+                                onClick={() => toggleSubject(subject._id)}
+                              >
+                                {subject.name}
+                                {expandedSubjects.includes(subject._id) ? (
+                                  <ChevronDown className="h-4 w-4 ml-2" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 ml-2" />
+                                )}
+                              </h3>
+                              <AnimatePresence>
+                                {expandedSubjects.includes(subject._id) && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3 }}
                                   >
-                                    {quiz.difficulty}
-                                  </Badge>
-                                  {quiz.featured && (
-                                    <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
-                                  )}
-                                </div>
-                              </div>
-                              <div className="mt-2 flex items-center">
-                                <div className="flex items-center">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`h-4 w-4 ${
-                                        i < Math.round(quiz.averageRating)
-                                          ? 'text-yellow-400 fill-current'
-                                          : 'text-gray-300'
-                                      }`}
-                                    />
-                                  ))}
-                                </div>
-                                <span className="ml-2 text-sm text-gray-600">
-                                  {quiz.averageRating.toFixed(1)} ({quiz.ratingCount} avis)
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      ))}
-
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
-      <div className="mt-8">
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious 
-                href="#" 
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-              />
-            </PaginationItem>
-            {[...Array(totalPages)].map((_, i) => (
-              <PaginationItem key={i}>
-                <PaginationLink 
-                  href="#" 
-                  onClick={() => setCurrentPage(i + 1)}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
+                                    {(subject.quizzes || []).map(quiz => (
+                                      <Link href={`/quiz/${quiz._id}`} key={quiz._id}>
+                                        <Card className="mb-2 hover:bg-accent transition-colors">
+                                          <CardContent className="p-4">
+                                            <div className="flex items-center justify-between">
+                                              <div>
+                                                <h4 className="font-medium">{quiz.title}</h4>
+                                                <p className="text-sm text-muted-foreground">par {quiz.createdBy.username}</p>
+                                              </div>
+                                              <div className="flex items-center space-x-2">
+                                                <Badge
+                                                  variant={
+                                                    quiz.difficulty === 'easy'
+                                                      ? 'secondary'
+                                                      : quiz.difficulty === 'medium'
+                                                      ? 'default'
+                                                      : 'destructive'
+                                                  }
+                                                >
+                                                  {quiz.difficulty}
+                                                </Badge>
+                                                {quiz.featured && (
+                                                  <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="mt-2 flex items-center">
+                                              <div className="flex items-center">
+                                                {[...Array(5)].map((_, i) => (
+                                                  <Star
+                                                    key={i}
+                                                    className={`h-4 w-4 ${
+                                                      i < Math.round(quiz.averageRating)
+                                                        ? 'text-yellow-400 fill-current'
+                                                        : 'text-muted-foreground'
+                                                    }`}
+                                                  />
+                                                ))}
+                                              </div>
+                                              <span className="ml-2 text-sm text-muted-foreground">
+                                                {quiz.averageRating.toFixed(1)} ({quiz.ratingCount} avis)
+                                              </span>
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                      </Link>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Card>
+              </motion.div>
             ))}
-            <PaginationItem>
-              <PaginationNext 
-                href="#" 
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+          </AnimatePresence>
+        </motion.div>
+        <div className="mt-8">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={() => setCurrentPage(i + 1)}
+                    isActive={currentPage === i + 1}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </div>
     </div>
   )
