@@ -179,7 +179,7 @@ export default function CategoriesPage() {
                                     transition={{ duration: 0.3 }}
                                   >
                                     {(subject.quizzes || []).map(quiz => (
-                                      <Link href={`/quiz/${quiz._id}`} key={quiz._id}>
+                                      <Link href={`/public/${quiz._id}`} key={quiz._id}>
                                         <Card className="mb-2 hover:bg-accent transition-colors">
                                           <CardContent className="p-4">
                                             <div className="flex items-center justify-between">
