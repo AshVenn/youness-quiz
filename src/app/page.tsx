@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,50 +13,50 @@ import { useRouter } from 'next/navigation';
 import SmartQAnimated from '@/components/SmartQAnimated';
 
 export default function LandingPage() {
-  const [prompt, setPrompt] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const { data: session } = useSession()
-  const router = useRouter()
-  const { toast } = useToast()
-  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null)
+  const [prompt, setPrompt] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
 
   useEffect(() => {
     if (session) {
       fetch(`/api/user/${session.user.id}/remaining-attempts`)
         .then(res => res.json())
         .then(data => {
-          setRemainingAttempts(data.remainingAttempts)
+          setRemainingAttempts(data.remainingAttempts);
         })
         .catch(err => {
-          console.error(err)
-          setRemainingAttempts(0)
-        })
+          console.error(err);
+          setRemainingAttempts(0);
+        });
     } else {
-      setRemainingAttempts(null)
+      setRemainingAttempts(null);
     }
-  }, [session])
+  }, [session]);
 
   const handleSubmit = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
 
     if (!session) {
       toast({
-        title: "Connexion requise",
-        description: "Veuillez vous connecter pour générer un quiz.",
-        variant: "destructive",
-      })
-      setIsLoading(false)
-      return
+        title: 'Connexion requise',
+        description: 'Veuillez vous connecter pour générer un quiz.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
     }
 
     if (remainingAttempts !== null && remainingAttempts <= 0) {
       toast({
-        title: "Limite atteinte",
+        title: 'Limite atteinte',
         description: "Vous n'avez plus de tentatives restantes.",
-        variant: "destructive",
-      })
-      setIsLoading(false)
-      return
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
     }
 
     try {
@@ -64,44 +64,49 @@ export default function LandingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
-      })
+      });
 
       if (!quizResponse.ok) {
-        const quizError = await quizResponse.json()
-        throw new Error(quizError.message || 'Erreur lors de la génération du quiz.')
+        const quizError = await quizResponse.json();
+        throw new Error(quizError.message || 'Erreur lors de la génération du quiz.');
       }
 
-      const quizData = await quizResponse.json()
+      const quizData = await quizResponse.json();
 
       if (remainingAttempts !== null) {
-        setRemainingAttempts(remainingAttempts - 1)
+        setRemainingAttempts(remainingAttempts - 1);
       }
 
-      router.push(`/user/takequiz/${quizData.quizId}`)
+      router.push(`/user/takequiz/${quizData.quizId}`);
     } catch (err) {
       toast({
-        title: "Erreur",
+        title: 'Erreur',
         description: err instanceof Error ? err.message : "Une erreur s'est produite. Veuillez réessayer.",
-        variant: "destructive",
-      })
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen justify-center items-center bg-background">
       <BackgroundBeamsWithCollision>
-        <main className="flex-grow flex flex-col justify-center items-center p-4 relative z-10">
-          <SmartQAnimated 
-            width={500} 
-            height={500} 
-            className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] mb-8" 
+        <main className="flex-grow flex flex-col justify-center items-center h-full relative z-10">
+          <SmartQAnimated
+            className="w-[300px] h-[60px] sm:w-[400px] sm:h-[80px] md:w-[500px] md:h-[100px] lg:w-[600px] lg:h-[120px] mb-8"
           />
 
-          <p className="max-w-xl mx-auto text-sm md:text-lg text-foreground text-center mb-8">
+          <p className="max-w-xl mx-auto text-sm md:text-lg text-foreground text-center mb-4">
             Générez des quiz intelligents sur n'importe quel sujet, instantanément.
           </p>
+
+          <p className="text-sm text-black dark:text-foreground flex justify-center items-center mb-6">
+            Powered by{' '}
+            <span className="text-primary font-semibold mx-1">Google Gemini Pro</span>{' '}
+            <Sparkles className="text-primary w-5 h-5 ml-2" />
+          </p>
+
           <Card className="w-full max-w-md backdrop-blur-sm bg-background/80 shadow-lg mx-auto border-primary/20">
             <CardContent className="p-6">
               <motion.div
@@ -124,6 +129,7 @@ export default function LandingPage() {
                 >
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Générer le Quiz'}
                 </Button>
+
                 {session && remainingAttempts !== null && (
                   <motion.p
                     className="mt-2 text-center text-sm text-muted-foreground"
@@ -140,5 +146,5 @@ export default function LandingPage() {
         </main>
       </BackgroundBeamsWithCollision>
     </div>
-  )
+  );
 }
