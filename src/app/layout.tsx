@@ -19,11 +19,37 @@ const geistMono = localFont({
 });
 
 // Metadata in French for the SmartQ app
-export const metadata: Metadata = {
-  title: 'SmartQ - Générateur de QCM',
-  description:
-    'Créez et répondez à des QCM personnalisés avec SmartQ. Connectez-vous pour suivre vos résultats et tentatives.',
+export const metadata = {
+  metadataBase: new URL('https://smartq-app.vercel.app'),
+  title: {
+    default: 'SmartQ',
+    template: '%s - SmartQ',
+  },
+  description: "Créez et répondez à des QCM personnalisés avec SmartQ. Connectez-vous pour suivre vos résultats et tentatives.",
+  twitter: {
+    handle: '@smartq_app',
+    site: '@smartq_app',
+    card: 'summary_large_image',
+  },
+  openGraph: {
+    title: 'SmartQ - Générateur de QCM',
+    description: "SmartQ est votre outil pour créer et répondre à des QCM intelligents. Gérez facilement vos tentatives et résultats en un seul endroit.",
+    url: 'https://smartq-app.vercel.app',
+    type: 'website',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        alt: 'SmartQ - Générateur de QCM',
+      },
+    ],
+  },
+  icons: {
+    icon: '/favicon/favicon.ico',
+    shortcut: '/favicon/favicon.ico',
+    apple: '/favicon/apple-touch-icon.png',
+  },
 };
+
 
 export default function RootLayout({
   children,
@@ -32,6 +58,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
+            <meta name="viewport" content="width=device-width, initial-scale=1"/>
+            <link rel='icon' href='/SmartQ.svg' type="image/svg+xml" />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
