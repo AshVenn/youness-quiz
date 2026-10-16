@@ -2,6 +2,9 @@
   "name": "quizmaker",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -35,7 +38,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.441.0",
     "mongoose": "^8.6.3",
-    "next": "14.2.13",
+    "next": "14.2.35",
     "next-auth": "^4.24.8",
     "next-themes": "^0.3.0",
     "react": "^18",
